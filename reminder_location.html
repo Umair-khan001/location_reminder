@@ -1,0 +1,5089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoPin Reminder - Location-based Reminders</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    /* Global Styles */
+    :root {
+      --primary-color: #5468ff;
+      --primary-gradient: linear-gradient(135deg, #5468ff 0%, #8e65fb 100%);
+      --primary-light: #818cf8;
+      --primary-dark: #4338ca;
+      --success-color: #10b981;
+      --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+      --info-color: #3b82f6;
+      --info-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      --warning-color: #f59e0b;
+      --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      --danger-color: #ef4444;
+      --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.5);
+      --radius-sm: 0.25rem;
+      --radius: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-xl: 1.5rem;
+      --radius-2xl: 2rem;
+      --transition-normal: all 0.3s ease;
+      --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      --bg-gradient: linear-gradient(135deg, rgba(249, 250, 251, 1) 0%, rgba(243, 244, 246, 0.8) 100%);
+      --bg-gradient-dark: linear-gradient(135deg, rgba(31, 41, 55, 1) 0%, rgba(17, 24, 39, 0.8) 100%);
+      --card-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(244, 247, 254, 0.95) 100%);
+      --card-gradient-dark: linear-gradient(135deg, rgba(26, 32, 44, 0.95) 0%, rgba(17, 24, 39, 0.85) 100%);
+      --modal-backdrop: rgba(15, 23, 42, 0.65);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-800);
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      transition: var(--transition-normal);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+      background-image: var(--primary-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 247, 254, 0.8) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      transition: var(--transition-normal);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* Desktop navigation */
+    @media screen and (min-width: 769px) {
+      #main-nav {
+        display: flex;
+      }
+      
+      #main-nav ul {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 1.5rem;
+      }
+    }
+    
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    header h1:before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      margin-right: 12px;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: var(--gray-700);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition-normal);
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-link:before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 3px;
+      background: var(--primary-gradient);
+      transition: var(--transition-normal);
+      border-radius: var(--radius-sm);
+    }
+
+    .nav-link.active {
+      color: var(--primary-color);
+    }
+
+    .nav-link.active:before {
+      width: 60%;
+    }
+
+    .nav-link:hover {
+      color: var(--primary-color);
+      transform: translateY(-2px);
+    }
+
+    .nav-link:hover:before {
+      width: 40%;
+    }
+
+    .nav-link i {
+      font-size: 1rem;
+      transition: var(--transition-normal);
+    }
+
+    .nav-link:hover i {
+      transform: scale(1.2);
+    }
+
+    /* Buttons */
+    .primary-btn, .secondary-btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      border: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      font-family: 'Poppins', sans-serif;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .primary-btn {
+      background: var(--primary-gradient);
+      color: white;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .primary-btn:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+      transition: var(--transition-normal);
+      z-index: -1;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .primary-btn:hover:before {
+      left: 100%;
+    }
+
+    .primary-btn:active {
+      transform: translateY(-1px);
+    }
+
+    .secondary-btn {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: var(--gray-800);
+      border: 1px solid var(--gray-300);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .secondary-btn:hover {
+      background-color: white;
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-color: var(--primary-light);
+    }
+
+    .secondary-btn:active {
+      transform: translateY(-1px);
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      background-color: rgba(255, 255, 255, 0.7);
+      color: var(--gray-700);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      font-weight: 500;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .filter-btn:hover {
+      background-color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .day-tab {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background-color: transparent;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition-normal);
+      position: relative;
+    }
+
+    .day-tab:after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 3px;
+      background: var(--primary-gradient);
+      transition: var(--transition-normal);
+      border-radius: var(--radius-sm);
+    }
+
+    .day-tab.active {
+      color: var(--primary-color);
+    }
+
+    .day-tab.active:after {
+      width: 80%;
+    }
+
+    .day-tab:hover {
+      color: var(--primary-color);
+    }
+
+    .day-tab:hover:after {
+      width: 40%;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--gray-500);
+      transition: var(--transition-normal);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      background-color: var(--gray-100);
+      color: var(--danger-color);
+      transform: rotate(90deg);
+    }
+
+    /* Page Layout */
+    main {
+      padding: 2rem 0;
+      min-height: calc(100vh - 70px);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .page-header h2 {
+      position: relative;
+      padding-left: 1rem;
+      margin-bottom: 0;
+    }
+    
+    .page-header h2:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 70%;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-sm);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Filter Container */
+    .filter-container {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      padding-bottom: 0.75rem;
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+
+    .filter-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Days Tabs */
+    .days-tabs {
+      display: flex;
+      overflow-x: auto;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--gray-200);
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+
+    .days-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Reminders */
+    .reminders-container, .day-schedule-container {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .reminder-card, .class-card {
+      background: var(--card-gradient);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 5px 10px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transition: var(--transition-normal);
+      transform-origin: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .reminder-card:nth-child(odd), .class-card:nth-child(odd) {
+      animation-delay: 0.5s;
+    }
+
+    .reminder-card:nth-child(3n), .class-card:nth-child(3n) {
+      animation-delay: 1s;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+      100% {
+        transform: translateY(0px);
+      }
+    }
+
+    .reminder-card:before, .class-card:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%);
+      pointer-events: none;
+    }
+
+    .reminder-card:hover, .class-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: var(--shadow-md);
+    }
+
+    .reminder-card.deleting {
+      animation: deleteAnimation 0.5s ease-out forwards;
+    }
+
+    @keyframes deleteAnimation {
+      0% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.05) translateY(-5px);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(0) translateY(50px);
+        opacity: 0;
+      }
+    }
+
+    .reminder-header, .class-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .reminder-title, .class-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+      color: var(--gray-800);
+      -webkit-text-fill-color: var(--gray-800);
+      background-image: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.375rem 0.75rem;
+      border-radius: var(--radius-lg);
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .badge-secondary {
+      background-color: rgba(243, 244, 246, 0.9);
+      color: var(--gray-700);
+    }
+
+    .badge-success {
+      background: var(--success-gradient);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    .badge-info {
+      background: var(--info-gradient);
+      color: white;
+      animation: pulse 2s infinite;
+      animation-delay: 0.5s;
+    }
+
+    .badge-priority {
+      background: var(--danger-gradient);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    .reminder-info, .class-info {
+      color: var(--gray-600);
+      font-size: 0.925rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .reminder-info i, .class-info i {
+      color: var(--primary-color);
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .reminder-actions, .class-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(229, 231, 235, 0.5);
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--gray-600);
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: var(--transition-normal);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:hover {
+      background-color: rgba(243, 244, 246, 0.7);
+      color: var(--primary-color);
+      transform: scale(1.1);
+    }
+
+    .action-btn.delete-btn:hover {
+      color: var(--danger-color);
+      background-color: rgba(254, 226, 226, 0.7);
+    }
+
+    .active-class {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+      border-color: rgba(16, 185, 129, 0.3);
+      border-left: 4px solid var(--success-color);
+    }
+
+    .upcoming-class {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+      border-color: rgba(59, 130, 246, 0.3);
+      border-left: 4px solid var(--info-color);
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      color: var(--gray-500);
+      background: var(--card-gradient);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: var(--transition-normal);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.4;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .empty-state p {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .add-class-empty-btn {
+      margin-top: 1.5rem;
+    }
+
+    /* Map View */
+    #map-container {
+      height: 500px;
+      margin-bottom: 2rem;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .map-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(243, 244, 246, 0.3) 0%, rgba(243, 244, 246, 0.1) 100%);
+      color: var(--gray-500);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .map-placeholder i {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.4;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulse 2s infinite;
+    }
+
+    .map-reminders h3 {
+      margin-bottom: 1rem;
+    }
+
+    /* Settings */
+    .settings-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .settings-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .settings-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1rem;
+      grid-column: 1 / -1;
+    }
+    
+    .settings-form {
+      background: var(--card-gradient);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      max-width: 600px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .form-group {
+      margin-bottom: 2rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+
+    input[type="text"], 
+    input[type="time"],
+    textarea, 
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(209, 213, 219, 0.5);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      transition: var(--transition-normal);
+      background-color: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    input[type="text"]:focus, 
+    input[type="time"]:focus,
+    textarea:focus, 
+    select:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      background-color: white;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 1rem;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .time-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    /* Checkboxes */
+    .checkbox-container {
+      display: block;
+      position: relative;
+      padding-left: 35px;
+      cursor: pointer;
+      font-size: 1rem;
+      user-select: none;
+      font-weight: 500;
+    }
+
+    .checkbox-container input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    .checkmark {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 22px;
+      width: 22px;
+      background-color: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      transition: var(--transition-normal);
+    }
+
+    .checkbox-container:hover input ~ .checkmark {
+      background-color: white;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .checkbox-container input:checked ~ .checkmark {
+      background: var(--primary-gradient);
+      border-color: transparent;
+    }
+
+    .checkmark:after {
+      content: "";
+      position: absolute;
+      display: none;
+    }
+
+    .checkbox-container input:checked ~ .checkmark:after {
+      display: block;
+      animation: checkmark 0.2s ease-in-out forwards;
+    }
+
+    @keyframes checkmark {
+      0% {
+        transform: scale(0) rotate(45deg);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1) rotate(45deg);
+        opacity: 1;
+      }
+    }
+
+    .checkbox-container .checkmark:after {
+      left: 8px;
+      top: 4px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Form Actions */
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1.5rem;
+    }
+
+    /* Location Search */
+    .location-search {
+      position: relative;
+    }
+
+    .location-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background-color: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(209, 213, 219, 0.5);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05);
+      max-height: 250px;
+      overflow-y: auto;
+      display: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      margin-top: 5px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .location-suggestion {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: var(--transition-normal);
+    }
+
+    .location-suggestion:hover {
+      background-color: rgba(243, 244, 246, 0.7);
+      transform: translateX(5px);
+    }
+
+    .location-suggestion i {
+      color: var(--primary-color);
+      font-size: 1.125rem;
+    }
+
+    .location-suggestion-name {
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .location-suggestion-address {
+      font-size: 0.8125rem;
+      color: var(--gray-500);
+      margin-top: 0.25rem;
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      overflow: auto;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.show {
+      opacity: 1;
+    }
+
+    .modal-content {
+      background: var(--card-gradient);
+      margin: 7% auto;
+      width: 90%;
+      max-width: 550px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      animation: modalSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    @keyframes modalSlideIn {
+      0% {
+        transform: translateY(-70px) scale(0.9);
+        opacity: 0;
+      }
+      70% {
+        transform: translateY(10px) scale(1.02);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    /* Alert Dialogs */
+    .alert-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    
+    .blur-bg {
+      filter: blur(5px) brightness(0.9);
+      transition: filter 0.3s ease;
+      pointer-events: none;
+    }
+
+    .alert-dialog.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .alert-content {
+      background: var(--card-gradient);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      animation: zoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .alert-content:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: var(--primary-gradient);
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .alert-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+    }
+
+    .alert-icon.warning {
+      color: var(--warning-color);
+    }
+
+    .alert-icon.danger {
+      color: var(--danger-color);
+    }
+
+    .alert-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      -webkit-text-fill-color: var(--gray-800);
+      background-image: none;
+    }
+
+    .alert-message {
+      margin-bottom: 1.5rem;
+      color: var(--gray-600);
+    }
+
+    .alert-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+    
+    .delete-confirm {
+      background-color: var(--danger-color) !important;
+      color: white !important;
+      border-color: var(--danger-color) !important;
+    }
+    
+    .delete-confirm:hover {
+      background-color: rgb(185, 28, 28) !important;
+    }
+
+    /* Responsive design */
+    /* Hamburger Menu */
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 30px;
+      height: 21px;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 100%;
+      height: 3px;
+      background: var(--primary-color);
+      border-radius: 3px;
+      transition: var(--transition-normal);
+    }
+
+    .menu-toggle.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .menu-toggle.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+    
+    @media screen and (max-width: 768px) {
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+      
+      /* Show hamburger menu and hide regular nav on mobile */
+      .menu-toggle {
+        display: flex;
+      }
+      
+      nav ul {
+        display: none; /* Hide nav by default on mobile */
+      }
+      
+      #main-nav {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 80%;
+        max-width: 300px;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 80px 20px 20px;
+        z-index: 90;
+        transition: var(--transition-normal);
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      
+      #main-nav.active {
+        right: 0;
+      }
+      
+      #main-nav.active ul {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .nav-link {
+        width: 100%;
+        padding: 0.75rem 1rem;
+      }
+      
+      .nav-link:before {
+        bottom: auto;
+        top: 0;
+        left: 0;
+        transform: none;
+        width: 3px;
+        height: 0;
+      }
+      
+      .nav-link.active:before,
+      .nav-link:hover:before {
+        width: 3px;
+        height: 100%;
+      }
+      
+      .nav-link i {
+        width: 25px;
+        text-align: center;
+        margin-right: 10px;
+      }
+
+      .time-group {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 5% auto;
+      }
+
+      .days-tabs {
+        justify-content: space-between;
+      }
+
+      .day-tab {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      /* Adjust header for mobile */
+      header .container {
+        padding: 0.5rem 1rem;
+      }
+    }
+
+    /* Dark theme styles removed */
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 1rem 1.25rem;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--gray-800);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      max-width: 90%;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-left: 5px solid var(--primary-color);
+      transform: translateX(120%);
+      animation: toastEnter 0.5s forwards, toastExit 0.5s 4.5s forwards;
+    }
+    
+    @keyframes toastEnter {
+      to {
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes toastExit {
+      to {
+        transform: translateX(120%);
+        opacity: 0;
+      }
+    }
+    
+    .toast-content {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .toast-content i {
+      font-size: 1.5rem;
+    }
+    
+    .toast-info {
+      border-left-color: var(--info-color);
+    }
+    
+    .toast-info i {
+      color: var(--info-color);
+    }
+    
+    .toast-success {
+      border-left-color: var(--success-color);
+    }
+    
+    .toast-success i {
+      color: var(--success-color);
+    }
+    
+    .toast-warning {
+      border-left-color: var(--warning-color);
+    }
+    
+    .toast-warning i {
+      color: var(--warning-color);
+    }
+    
+    .toast-error {
+      border-left-color: var(--danger-color);
+    }
+    
+    .toast-error i {
+      color: var(--danger-color);
+    }
+    
+    .toast-message {
+      font-weight: 500;
+    }
+    
+    .toast-close {
+      margin-left: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.125rem;
+      opacity: 0.6;
+      color: var(--gray-600);
+      padding: 0.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-normal);
+    }
+    
+    .toast-close:hover {
+      opacity: 1;
+      background-color: rgba(243, 244, 246, 0.7);
+      transform: rotate(90deg);
+    }
+    
+    /* Dark theme toast styles removed */
+
+    /* Custom Animations */
+    .scale-in {
+      animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .slide-up {
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .pop {
+      animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* User marker on map */
+    .user-location-marker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      animation: pulse 2s infinite;
+    }
+    
+    /* Pin marker for map */
+    .pin-marker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      color: #ef4444;
+      filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.2));
+      animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    /* Popup button styling */
+    .map-popup-btn {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .map-popup-btn:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+      transition: all 0.6s ease;
+    }
+    
+    .map-popup-btn:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    .map-popup-btn:hover:before {
+      left: 100%;
+    }
+    
+    /* Dark theme map popup button styles removed */
+    
+    @keyframes bounce-in {
+      0% {
+        transform: scale(0) translateY(-10px);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.2) translateY(0);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .user-location-marker i {
+      color: var(--primary-color);
+      text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Leaflet custom styles */
+    .leaflet-popup-content-wrapper {
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+    }
+
+    .leaflet-popup-content {
+      margin: 0.75rem 1rem;
+      line-height: 1.5;
+    }
+
+    .leaflet-popup-content strong {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .leaflet-container a.leaflet-popup-close-button {
+      top: 5px;
+      right: 5px;
+      padding: 5px;
+      font-size: 20px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gray-300);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-400);
+    }
+
+    /* Dark theme scrollbar styles removed */
+    
+    /* Highlight effect for inputs (for the Create Reminder Here button) */
+    .highlight-input {
+      animation: highlightPulse 1s;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.5) !important;
+    }
+    
+    @keyframes highlightPulse {
+      0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+    }
+    
+    /* Map search container */
+    .map-search-container {
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .map-search {
+      position: relative;
+      display: flex;
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      background: white;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    
+    .map-search input {
+      flex: 1;
+      border: none;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: var(--radius) 0 0 var(--radius);
+    }
+    
+    .map-search-btn {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      padding: 0 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-normal);
+    }
+    
+    .map-search-btn:hover {
+      background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+    }
+    
+    /* Location suggestions container */
+    .location-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: var(--shadow-md);
+      z-index: 20;
+      display: none;
+    }
+    
+    .location-suggestions.show {
+      display: block;
+    }
+    
+    .location-suggestion-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    
+    .location-suggestion-item:hover {
+      background-color: var(--gray-100);
+    }
+    
+    .location-suggestion-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>GeoPin Reminder</h1>
+      <div class="menu-toggle" id="menu-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <nav id="main-nav">
+        <ul>
+          <li><a href="#dashboard" class="nav-link active" data-tab="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+          <li><a href="#timetable" class="nav-link" data-tab="timetable"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+          <li><a href="#map" class="nav-link" data-tab="map"><i class="fas fa-map-marked-alt"></i> Map View</a></li>
+          <li><a href="#settings" class="nav-link" data-tab="settings"><i class="fas fa-sliders-h"></i> Settings</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Dashboard Tab -->
+    <section id="dashboard" class="tab-content active">
+      <div class="page-header">
+        <h2>Dashboard</h2>
+        <button class="primary-btn" id="add-reminder-btn">
+          <i class="fas fa-plus"></i> Add Reminder
+        </button>
+      </div>
+
+      <div class="filter-container">
+        <button class="filter-btn active" data-filter="all">All Reminders</button>
+        <button class="filter-btn" data-filter="priority"><i class="fas fa-star"></i> Priority</button>
+        <button class="filter-btn" data-filter="location"><i class="fas fa-map-pin"></i> Location-based</button>
+        <button class="filter-btn" data-filter="nearby"><i class="fas fa-location-arrow"></i> Nearby</button>
+      </div>
+
+      <div class="reminders-container">
+        <!-- Reminders will be added here dynamically -->
+        <div class="empty-state" id="no-reminders">
+          <i class="fas fa-bell"></i>
+          <p>No reminders yet</p>
+          <p>Create your first location-based reminder to get started!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timetable Tab -->
+    <section id="timetable" class="tab-content">
+      <div class="page-header">
+        <h2>Class Timetable</h2>
+        <button class="primary-btn" id="add-class-btn">
+          <i class="fas fa-plus"></i> Add Class
+        </button>
+      </div>
+
+      <div class="days-tabs">
+        <button class="day-tab active" data-day="monday">Monday</button>
+        <button class="day-tab" data-day="tuesday">Tuesday</button>
+        <button class="day-tab" data-day="wednesday">Wednesday</button>
+        <button class="day-tab" data-day="thursday">Thursday</button>
+        <button class="day-tab" data-day="friday">Friday</button>
+        <button class="day-tab" data-day="saturday">Saturday</button>
+        <button class="day-tab" data-day="sunday">Sunday</button>
+      </div>
+
+      <div class="day-schedule-container">
+        <!-- Classes will be displayed here -->
+        <div class="empty-state" id="no-classes">
+          <i class="fas fa-calendar-alt"></i>
+          <p>No classes scheduled for this day</p>
+          <button class="secondary-btn add-class-empty-btn">
+            <i class="fas fa-plus"></i> Add Class
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map View Tab -->
+    <section id="map" class="tab-content">
+      <div class="page-header">
+        <h2>Map View</h2>
+        <div class="map-controls">
+          <button class="primary-btn" id="center-map-btn">
+            <i class="fas fa-crosshairs"></i> Center on Me
+          </button>
+          <button class="secondary-btn" id="toggle-pin-mode-btn">
+            <i class="fas fa-map-pin"></i> Pin Mode: Off
+          </button>
+          <button class="secondary-btn" id="add-reminder-map-btn">
+            <i class="fas fa-plus"></i> Add Reminder
+          </button>
+        </div>
+      </div>
+      
+      <div class="map-search-container">
+        <div class="location-search map-search">
+          <input type="text" id="map-search-input" placeholder="Search for a location...">
+          <button id="map-search-btn" class="map-search-btn">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="location-suggestions" id="map-search-suggestions"></div>
+        </div>
+      </div>
+
+      <div id="map-container">
+        <!-- Map will be loaded here -->
+        <div class="map-placeholder">
+          <i class="fas fa-map-marked-alt"></i>
+          <p>Map loading...</p>
+        </div>
+      </div>
+
+      <div class="map-reminders">
+        <h3>Nearby Reminders</h3>
+        <div id="nearby-reminders">
+          <!-- Nearby reminders will be shown here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Tab -->
+    <section id="settings" class="tab-content">
+      <div class="page-header">
+        <h2>Settings</h2>
+      </div>
+
+      <div class="settings-cards">
+        <!-- Notification Settings Card -->
+        <div class="settings-card reminder-card">
+          <div class="reminder-header">
+            <div class="reminder-title">Notification Settings</div>
+          </div>
+          <div class="form-group">
+            <label for="notification-distance">Default Notification Distance</label>
+            <select id="notification-distance">
+              <option value="50">50 meters</option>
+              <option value="100" selected>100 meters</option>
+              <option value="200">200 meters</option>
+              <option value="500">500 meters</option>
+              <option value="1000">1 kilometer</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="auto-delete">
+              <span class="checkmark"></span>
+              Automatically delete reminders once triggered
+            </label>
+          </div>
+        </div>
+        
+        <!-- Appearance Settings Card -->
+        <div class="settings-card reminder-card">
+          <div class="reminder-header">
+            <div class="reminder-title">Appearance</div>
+          </div>
+          <div class="form-group">
+            <label for="theme-select">Theme</label>
+            <select id="theme-select">
+              <option value="light" selected>Light</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Schedule Settings Card -->
+        <div class="settings-card reminder-card">
+          <div class="reminder-header">
+            <div class="reminder-title">Class Schedule</div>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="class-reminders" checked>
+              <span class="checkmark"></span>
+              Automatically create reminders from class schedule
+            </label>
+          </div>
+        </div>
+        
+        <!-- Save Button -->
+        <div class="settings-actions">
+          <button class="primary-btn" id="save-settings">
+            <i class="fas fa-save"></i> Save Settings
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <div class="modal" id="reminder-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Reminder</h3>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="reminder-form">
+          <div class="form-group">
+            <label for="reminder-title">Title</label>
+            <input type="text" id="reminder-title" placeholder="Enter reminder title" required>
+          </div>
+          <div class="form-group">
+            <label for="reminder-description">Description</label>
+            <textarea id="reminder-description" placeholder="Enter description (optional)" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="location-input">Location</label>
+            <div class="location-search">
+              <input type="text" id="location-input" placeholder="Search for a location" required>
+              <div class="location-suggestions" id="location-suggestions"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="notification-type">Notification Type</label>
+            <select id="notification-type">
+              <option value="arrival">On Arrival</option>
+              <option value="departure">On Departure</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reminder-radius">Radius (meters)</label>
+            <input type="range" id="reminder-radius" min="50" max="500" step="10" value="100">
+            <span id="radius-value">100m</span>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="reminder-priority">
+              <span class="checkmark"></span>
+              Mark as Priority
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="secondary-btn" id="cancel-reminder">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" class="primary-btn">
+              <i class="fas fa-save"></i> Save Reminder
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="class-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Class</h3>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="class-form">
+          <div class="form-group">
+            <label for="class-title">Class Title</label>
+            <input type="text" id="class-title" placeholder="e.g. Mathematics, Computer Science" required>
+          </div>
+          <div class="form-group">
+            <label for="class-location">Location</label>
+            <div class="location-search">
+              <input type="text" id="class-location" placeholder="e.g. Library, Science Building" required>
+              <div class="location-suggestions" id="class-location-suggestions"></div>
+            </div>
+          </div>
+          <div class="form-group time-group">
+            <div>
+              <label for="start-time">Start Time</label>
+              <input type="time" id="start-time" required>
+            </div>
+            <div>
+              <label for="end-time">End Time</label>
+              <input type="time" id="end-time" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="class-day">Day of Week</label>
+            <select id="class-day" required>
+              <option value="monday">Monday</option>
+              <option value="tuesday">Tuesday</option>
+              <option value="wednesday">Wednesday</option>
+              <option value="thursday">Thursday</option>
+              <option value="friday">Friday</option>
+              <option value="saturday">Saturday</option>
+              <option value="sunday">Sunday</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="secondary-btn" id="cancel-class">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="submit" class="primary-btn">
+              <i class="fas fa-plus"></i> Add Class
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Dialog Template -->
+  <div class="alert-dialog" id="alert-dialog">
+    <div class="alert-content">
+      <i class="fas fa-exclamation-triangle alert-icon warning"></i>
+      <h4 class="alert-title">Confirmation</h4>
+      <p class="alert-message">Are you sure you want to perform this action?</p>
+      <div class="alert-actions">
+        <button class="secondary-btn" id="alert-cancel">Cancel</button>
+        <button class="primary-btn" id="alert-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global state
+    const state = {
+      reminders: [],
+      weekSchedule: {
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+        sunday: []
+      },
+      activeTab: 'dashboard',
+      activeDay: getCurrentDayOfWeek(),
+      selectedFilter: 'all',
+      userLocation: null,
+      settings: {
+        notificationDistance: 100,
+        theme: 'light',
+        autoDelete: false,
+        classReminders: true
+      },
+      map: null,
+      markers: [],
+      currentAlertCallback: null,
+      pinModeActive: false,
+      temporaryMapMarker: null
+    };
+
+    // Common locations database for location suggestions
+    const commonLocations = [
+      {
+        name: "University Campus",
+        address: "University Main Campus",
+        coordinates: { lat: 37.773, lng: -122.415 }
+      },
+      {
+        name: "Library",
+        address: "Central Library, 2nd Floor",
+        coordinates: { lat: 37.772, lng: -122.411 }
+      },
+      {
+        name: "Science Building",
+        address: "Science Building, North Wing",
+        coordinates: { lat: 37.776, lng: -122.414 }
+      },
+      {
+        name: "Tech Center",
+        address: "Technology Center, Building B",
+        coordinates: { lat: 37.775, lng: -122.417 }
+      },
+      {
+        name: "Student Union",
+        address: "Student Union Building",
+        coordinates: { lat: 37.774, lng: -122.416 }
+      },
+      {
+        name: "Gym",
+        address: "Sports Complex, East Entrance",
+        coordinates: { lat: 37.777, lng: -122.418 }
+      },
+      {
+        name: "Cafeteria",
+        address: "Main Cafeteria, Building C",
+        coordinates: { lat: 37.778, lng: -122.413 }
+      },
+      {
+        name: "Arts Building",
+        address: "Arts & Humanities Building",
+        coordinates: { lat: 37.771, lng: -122.413 }
+      },
+      {
+        name: "Dormitory",
+        address: "Student Housing Complex",
+        coordinates: { lat: 37.779, lng: -122.419 }
+      },
+      {
+        name: "Parking Lot",
+        address: "Main Parking Area",
+        coordinates: { lat: 37.780, lng: -122.420 }
+      }
+    ];
+
+    // Default schedule data
+    const defaultSchedule = {
+      monday: [
+        { 
+          id: 1, 
+          title: "Mathematics", 
+          location: "Building A, Room 101", 
+          startTime: "09:00", 
+          endTime: "10:30",
+          locationCoordinates: { lat: 37.773, lng: -122.415 }
+        },
+        { 
+          id: 2, 
+          title: "Computer Science", 
+          location: "Tech Center, Lab 3", 
+          startTime: "11:00", 
+          endTime: "13:00",
+          locationCoordinates: { lat: 37.775, lng: -122.417 }
+        },
+        { 
+          id: 3, 
+          title: "Study Group", 
+          location: "Library, 2nd Floor", 
+          startTime: "14:30", 
+          endTime: "16:00",
+          locationCoordinates: { lat: 37.772, lng: -122.411 }
+        },
+      ],
+      tuesday: [
+        { 
+          id: 4, 
+          title: "Physics", 
+          location: "Science Building, Room 201", 
+          startTime: "10:00", 
+          endTime: "12:00",
+          locationCoordinates: { lat: 37.776, lng: -122.414 }
+        },
+        { 
+          id: 5, 
+          title: "English Literature", 
+          location: "Arts Building, Room 305", 
+          startTime: "13:30", 
+          endTime: "15:00",
+          locationCoordinates: { lat: 37.771, lng: -122.413 }
+        },
+      ],
+      wednesday: [
+        { 
+          id: 6, 
+          title: "Mathematics", 
+          location: "Building A, Room 101", 
+          startTime: "09:00", 
+          endTime: "10:30",
+          locationCoordinates: { lat: 37.773, lng: -122.415 }
+        },
+        { 
+          id: 7, 
+          title: "Programming Lab", 
+          location: "Tech Center, Lab 5", 
+          startTime: "13:00", 
+          endTime: "16:00",
+          locationCoordinates: { lat: 37.775, lng: -122.417 }
+        },
+      ],
+      thursday: [
+        { 
+          id: 8, 
+          title: "Physics", 
+          location: "Science Building, Room 201", 
+          startTime: "10:00", 
+          endTime: "12:00",
+          locationCoordinates: { lat: 37.776, lng: -122.414 }
+        },
+        { 
+          id: 9, 
+          title: "Group Project", 
+          location: "Collaboration Space", 
+          startTime: "14:00", 
+          endTime: "16:30",
+          locationCoordinates: { lat: 37.774, lng: -122.416 }
+        },
+      ],
+      friday: [
+        { 
+          id: 10, 
+          title: "Research Seminar", 
+          location: "Conference Hall", 
+          startTime: "11:00", 
+          endTime: "13:00",
+          locationCoordinates: { lat: 37.777, lng: -122.418 }
+        },
+        { 
+          id: 11, 
+          title: "Office Hours", 
+          location: "Professor's Office", 
+          startTime: "14:00", 
+          endTime: "15:00",
+          locationCoordinates: { lat: 37.775, lng: -122.412 }
+        },
+      ],
+      saturday: [],
+      sunday: [],
+    };
+
+    // DOM elements
+    let tabs, tabContents, filterButtons, dayTabs, reminderModal, classModal, 
+        reminderForm, classForm, addReminderBtn, addClassBtn, addClassEmptyBtn, 
+        cancelReminderBtn, cancelClassBtn, closeButtons, reminderRadiusSlider, 
+        radiusValue, locationInput, locationSuggestions, classLocationInput, 
+        classLocationSuggestions, centerMapBtn, saveSettingsBtn, themeSelect, 
+        notificationDistanceSelect, autoDeleteCheckbox, classRemindersCheckbox,
+        alertDialog, alertTitle, alertMessage, alertConfirm, alertCancel, alertIcon;
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get DOM elements
+      tabs = document.querySelectorAll('.nav-link');
+      tabContents = document.querySelectorAll('.tab-content');
+      filterButtons = document.querySelectorAll('.filter-btn');
+      dayTabs = document.querySelectorAll('.day-tab');
+      reminderModal = document.getElementById('reminder-modal');
+      classModal = document.getElementById('class-modal');
+      reminderForm = document.getElementById('reminder-form');
+      classForm = document.getElementById('class-form');
+      addReminderBtn = document.getElementById('add-reminder-btn');
+      addClassBtn = document.getElementById('add-class-btn');
+      addClassEmptyBtn = document.querySelector('.add-class-empty-btn');
+      cancelReminderBtn = document.getElementById('cancel-reminder');
+      cancelClassBtn = document.getElementById('cancel-class');
+      closeButtons = document.querySelectorAll('.close-btn');
+      menuToggle = document.getElementById('menu-toggle');
+      mainNav = document.getElementById('main-nav');
+      reminderRadiusSlider = document.getElementById('reminder-radius');
+      radiusValue = document.getElementById('radius-value');
+      locationInput = document.getElementById('location-input');
+      locationSuggestions = document.getElementById('location-suggestions');
+      classLocationInput = document.getElementById('class-location');
+      classLocationSuggestions = document.getElementById('class-location-suggestions');
+      centerMapBtn = document.getElementById('center-map-btn');
+      mapSearchInput = document.getElementById('map-search-input');
+      mapSearchBtn = document.getElementById('map-search-btn');
+      mapSearchSuggestions = document.getElementById('map-search-suggestions');
+      saveSettingsBtn = document.getElementById('save-settings');
+      themeSelect = document.getElementById('theme-select');
+      notificationDistanceSelect = document.getElementById('notification-distance');
+      autoDeleteCheckbox = document.getElementById('auto-delete');
+      classRemindersCheckbox = document.getElementById('class-reminders');
+      
+      // Alert dialog elements
+      alertDialog = document.getElementById('alert-dialog');
+      alertTitle = alertDialog.querySelector('.alert-title');
+      alertMessage = alertDialog.querySelector('.alert-message');
+      alertConfirm = document.getElementById('alert-confirm');
+      alertCancel = document.getElementById('alert-cancel');
+      alertIcon = alertDialog.querySelector('.alert-icon');
+      
+      // Setup alert dialog events
+      alertConfirm.addEventListener('click', () => {
+        hideAlert();
+        if (state.currentAlertCallback) {
+          state.currentAlertCallback(true);
+          state.currentAlertCallback = null;
+        }
+      });
+      
+      alertCancel.addEventListener('click', () => {
+        hideAlert();
+        if (state.currentAlertCallback) {
+          state.currentAlertCallback(false);
+          state.currentAlertCallback = null;
+        }
+      });
+      
+      // Load saved data
+      loadLocalStorage();
+      
+      // Initialize the UI
+      updateUI();
+      
+      // Set up event listeners
+      setupEventListeners();
+      
+      // Get user location
+      getUserLocation();
+      
+      // Start class monitoring
+      startClassMonitoring();
+      
+      // Add animation class to components after a short delay
+      setTimeout(() => {
+        document.querySelectorAll('.reminder-card, .class-card, .empty-state').forEach(el => {
+          el.classList.add('scale-in');
+        });
+      }, 300);
+    });
+
+    // Load data from localStorage
+    function loadLocalStorage() {
+      // Load reminders
+      const savedReminders = localStorage.getItem('reminders');
+      if (savedReminders) {
+        state.reminders = JSON.parse(savedReminders);
+      }
+      
+      // Load schedule
+      const savedSchedule = localStorage.getItem('timetable');
+      if (savedSchedule) {
+        state.weekSchedule = JSON.parse(savedSchedule);
+      } else {
+        state.weekSchedule = defaultSchedule;
+      }
+      
+      // Load settings
+      const savedSettings = localStorage.getItem('settings');
+      if (savedSettings) {
+        state.settings = JSON.parse(savedSettings);
+      }
+    }
+
+    // Save data to localStorage
+    function saveToLocalStorage() {
+      localStorage.setItem('reminders', JSON.stringify(state.reminders));
+      localStorage.setItem('timetable', JSON.stringify(state.weekSchedule));
+      localStorage.setItem('settings', JSON.stringify(state.settings));
+    }
+
+    // Update the UI based on current state
+    function updateUI() {
+      // Update tab display
+      updateActiveTab();
+      
+      // Update reminders display
+      renderReminders();
+      
+      // Update class timetable
+      renderTimetable();
+      
+      // Initialize map if on map tab
+      if (state.activeTab === 'map') {
+        initMap();
+      }
+      
+      // Apply settings
+      applySettings();
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+      // Mobile menu toggle
+      if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+          this.classList.toggle('active');
+          mainNav.classList.toggle('active');
+          
+          // If clicking on menu when it's open, close it
+          if (!this.classList.contains('active')) {
+            mainNav.classList.remove('active');
+          }
+        });
+        
+        // Close mobile menu when a link is clicked
+        document.querySelectorAll('#main-nav .nav-link').forEach(link => {
+          link.addEventListener('click', function() {
+            menuToggle.classList.remove('active');
+            mainNav.classList.remove('active');
+          });
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+          if (mainNav.classList.contains('active') && 
+              !mainNav.contains(e.target) && 
+              e.target !== menuToggle && 
+              !menuToggle.contains(e.target)) {
+            menuToggle.classList.remove('active');
+            mainNav.classList.remove('active');
+          }
+        });
+      }
+      
+      // Tab navigation
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabId = tab.getAttribute('data-tab');
+          switchTab(tabId);
+        });
+      });
+      
+      // Filter buttons
+      filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const filter = button.getAttribute('data-filter');
+          setFilter(filter);
+        });
+      });
+      
+      // Day tabs
+      dayTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const day = tab.getAttribute('data-day');
+          setActiveDay(day);
+        });
+      });
+      
+      // Add reminder button
+      addReminderBtn.addEventListener('click', openReminderModal);
+      
+      // Add class buttons
+      addClassBtn.addEventListener('click', openClassModal);
+      if (addClassEmptyBtn) {
+        addClassEmptyBtn.addEventListener('click', openClassModal);
+      }
+      
+      // Cancel buttons
+      cancelReminderBtn.addEventListener('click', closeReminderModal);
+      cancelClassBtn.addEventListener('click', closeClassModal);
+      
+      // Close modals
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const modal = this.closest('.modal');
+          
+          // Call the appropriate closing function instead of handling it here
+          if (modal.id === 'reminder-modal') {
+            closeReminderModal();
+          } else if (modal.id === 'class-modal') {
+            closeClassModal();
+          } else {
+            // Fallback for any other modals
+            modal.classList.remove('show');
+            
+            // Remove blur from main content
+            document.querySelector('main').classList.remove('blur-bg');
+            document.querySelector('header').classList.remove('blur-bg');
+            
+            setTimeout(() => {
+              modal.style.display = 'none';
+            }, 300);
+          }
+        });
+      });
+      
+      // Close modal when clicking outside
+      window.addEventListener('click', (e) => {
+        if (e.target === reminderModal) {
+          closeReminderModal();
+        }
+        if (e.target === classModal) {
+          closeClassModal();
+        }
+      });
+      
+      // Radius slider
+      reminderRadiusSlider.addEventListener('input', updateRadiusValue);
+      
+      // Form submissions
+      reminderForm.addEventListener('submit', handleReminderSubmit);
+      classForm.addEventListener('submit', handleClassSubmit);
+      
+      // Location input
+      locationInput.addEventListener('input', handleLocationSearch);
+      classLocationInput.addEventListener('input', handleClassLocationSearch);
+      
+      // Map search functionality
+      mapSearchInput.addEventListener('input', handleMapSearch);
+      mapSearchBtn.addEventListener('click', searchMapLocation);
+      
+      // Center map button
+      centerMapBtn.addEventListener('click', centerMapOnUser);
+      
+      // Map pin mode toggle
+      const togglePinModeBtn = document.getElementById('toggle-pin-mode-btn');
+      if (togglePinModeBtn) {
+        togglePinModeBtn.addEventListener('click', togglePinMode);
+      }
+      
+      // Add reminder from map button
+      const addReminderMapBtn = document.getElementById('add-reminder-map-btn');
+      if (addReminderMapBtn) {
+        addReminderMapBtn.addEventListener('click', () => {
+          openReminderModal();
+          // If we already have a map pin placed, use its location
+          if (state.temporaryMapMarker) {
+            const position = state.temporaryMapMarker.getLatLng();
+            const locationInput = document.getElementById('location-input');
+            locationInput.value = `Location at ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`;
+            locationInput.dataset.lat = position.lat.toString();
+            locationInput.dataset.lng = position.lng.toString();
+            locationInput.dataset.customLocation = 'true';
+          }
+        });
+      }
+      
+      // Settings
+      saveSettingsBtn.addEventListener('click', saveSettings);
+      themeSelect.addEventListener('change', updateTheme);
+    }
+
+    // Show alert dialog
+    function showAlert(title, message, type, callback) {
+      alertTitle.textContent = title;
+      alertMessage.textContent = message;
+      
+      // Update icon
+      alertIcon.className = 'fas alert-icon';
+      if (type === 'warning') {
+        alertIcon.classList.add('fa-exclamation-triangle', 'warning');
+        // Update confirm button color for warning
+        alertConfirm.classList.add('delete-confirm');
+        alertConfirm.innerHTML = '<i class="fas fa-trash-alt"></i> Delete';
+      } else if (type === 'danger') {
+        alertIcon.classList.add('fa-exclamation-circle', 'danger');
+        alertConfirm.classList.add('delete-confirm');
+      } else if (type === 'success') {
+        alertIcon.classList.add('fa-check-circle', 'success');
+        alertConfirm.classList.remove('delete-confirm');
+      } else {
+        alertIcon.classList.add('fa-info-circle', 'info');
+        alertConfirm.classList.remove('delete-confirm');
+      }
+      
+      // Store callback
+      state.currentAlertCallback = callback;
+      
+      // Apply blur to background content
+      document.querySelector('main').classList.add('blur-bg');
+      document.querySelector('header').classList.add('blur-bg');
+      
+      // Show dialog with animation
+      alertDialog.style.visibility = 'visible';
+      alertDialog.style.opacity = '0';
+      
+      // Reset animation classes if any
+      const alertContent = alertDialog.querySelector('.alert-content');
+      if (alertContent) {
+        alertContent.classList.remove('scale-in');
+      }
+      
+      setTimeout(() => {
+        alertDialog.classList.add('show');
+        alertDialog.style.opacity = '1';
+        
+        // Add scale effect to alert content
+        if (alertContent) {
+          alertContent.classList.add('scale-in');
+        }
+      }, 10);
+    }
+
+    // Hide alert dialog
+    function hideAlert() {
+      // Fade out dialog
+      alertDialog.classList.remove('show');
+      alertDialog.style.opacity = '0';
+      
+      // Remove blur from background content
+      document.querySelector('main').classList.remove('blur-bg');
+      document.querySelector('header').classList.remove('blur-bg');
+      
+      // Reset button text/style
+      alertConfirm.innerHTML = 'Confirm';
+      alertConfirm.classList.remove('delete-confirm');
+      
+      // Hide after animation completes
+      setTimeout(() => {
+        alertDialog.style.visibility = 'hidden';
+        
+        // Reset scale effect on content
+        const alertContent = alertDialog.querySelector('.alert-content');
+        if (alertContent) {
+          alertContent.classList.remove('scale-in');
+        }
+      }, 300);
+    }
+    
+    // Enhanced alert dialog with more customization options
+    function showAlertDialog(options) {
+      // Set default options
+      const defaults = {
+        icon: 'info',
+        title: 'Confirmation',
+        message: 'Are you sure you want to proceed?',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmClass: '',
+        onConfirm: null,
+        onCancel: null
+      };
+      
+      // Merge options with defaults
+      const settings = { ...defaults, ...options };
+      
+      // Set content
+      alertTitle.textContent = settings.title;
+      alertMessage.textContent = settings.message;
+      
+      // Update icon
+      alertIcon.className = 'fas alert-icon';
+      if (settings.icon === 'warning') {
+        alertIcon.classList.add('fa-exclamation-triangle', 'warning');
+      } else if (settings.icon === 'danger') {
+        alertIcon.classList.add('fa-exclamation-circle', 'danger');
+      } else if (settings.icon === 'success') {
+        alertIcon.classList.add('fa-check-circle', 'success');
+      } else {
+        alertIcon.classList.add('fa-info-circle', 'info');
+      }
+      
+      // Update buttons
+      alertConfirm.innerHTML = settings.confirmText;
+      if (settings.confirmClass) {
+        alertConfirm.classList.add(settings.confirmClass);
+      } else {
+        alertConfirm.classList.remove('delete-confirm');
+      }
+      
+      // Store callbacks
+      state.currentAlertCallback = (confirmed) => {
+        if (confirmed && typeof settings.onConfirm === 'function') {
+          settings.onConfirm();
+        } else if (!confirmed && typeof settings.onCancel === 'function') {
+          settings.onCancel();
+        }
+      };
+      
+      // Apply blur to background content
+      document.querySelector('main').classList.add('blur-bg');
+      document.querySelector('header').classList.add('blur-bg');
+      
+      // Show dialog with animation
+      alertDialog.style.visibility = 'visible';
+      alertDialog.style.opacity = '0';
+      
+      // Reset animation classes if any
+      const alertContent = alertDialog.querySelector('.alert-content');
+      if (alertContent) {
+        alertContent.classList.remove('scale-in');
+      }
+      
+      setTimeout(() => {
+        alertDialog.classList.add('show');
+        alertDialog.style.opacity = '1';
+        
+        // Add scale effect to alert content
+        if (alertContent) {
+          alertContent.classList.add('scale-in');
+        }
+      }, 10);
+    }
+
+    // Switch between tabs
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      
+      // Update tab states
+      tabs.forEach(tab => {
+        if (tab.getAttribute('data-tab') === tabId) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      
+      // Update content visibility
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Show the active tab with animation
+      const activeContent = document.getElementById(tabId);
+      setTimeout(() => {
+        activeContent.classList.add('active');
+      }, 50);
+      
+      // Initialize map if switching to map tab
+      if (tabId === 'map' && !state.map) {
+        initMap();
+      }
+    }
+
+    // Update active tab based on state
+    function updateActiveTab() {
+      switchTab(state.activeTab);
+    }
+
+    // Set active filter
+    function setFilter(filter) {
+      state.selectedFilter = filter;
+      
+      // Update button states
+      filterButtons.forEach(button => {
+        if (button.getAttribute('data-filter') === filter) {
+          button.classList.add('active');
+          button.classList.add('pop');
+          setTimeout(() => {
+            button.classList.remove('pop');
+          }, 300);
+        } else {
+          button.classList.remove('active');
+        }
+      });
+      
+      // Update reminders display
+      renderReminders();
+    }
+
+    // Set active day
+    function setActiveDay(day) {
+      state.activeDay = day;
+      
+      // Update tab states
+      dayTabs.forEach(tab => {
+        if (tab.getAttribute('data-day') === day) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      
+      // Update timetable display
+      renderTimetable();
+    }
+
+    // Render reminders based on selected filter
+    function renderReminders() {
+      const container = document.querySelector('.reminders-container');
+      const noReminders = document.getElementById('no-reminders');
+      
+      // Get filtered reminders
+      const filteredReminders = getFilteredReminders();
+      
+      // Clear container
+      container.innerHTML = '';
+      
+      // Show empty state if no reminders
+      if (filteredReminders.length === 0) {
+        if (noReminders) {
+          noReminders.style.display = 'flex';
+          container.appendChild(noReminders);
+        } else {
+          const emptyState = createEmptyState('No reminders found', 'fa-bell', 'Create a new reminder to get started!');
+          container.appendChild(emptyState);
+        }
+        return;
+      }
+      
+      // Hide empty state
+      if (noReminders) {
+        noReminders.style.display = 'none';
+      }
+      
+      // Create reminder cards with staggered animation
+      filteredReminders.forEach((reminder, index) => {
+        const card = createReminderCard(reminder);
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+        container.appendChild(card);
+      });
+    }
+
+    // Get reminders filtered by selected filter
+    function getFilteredReminders() {
+      switch (state.selectedFilter) {
+        case 'priority':
+          return state.reminders.filter(r => r.isPriority);
+        case 'location':
+          return state.reminders.filter(r => r.notificationType === 'arrival' || r.notificationType === 'both');
+        case 'nearby':
+          return getNearbyReminders();
+        default:
+          return state.reminders;
+      }
+    }
+
+    // Get reminders near the user's current location
+    function getNearbyReminders() {
+      if (!state.userLocation) return [];
+      
+      const nearbyRadius = state.settings.notificationDistance * 2; // Wider radius for "nearby" filter
+      
+      return state.reminders.filter(reminder => {
+        const distance = calculateDistance(
+          state.userLocation.latitude,
+          state.userLocation.longitude,
+          reminder.latitude,
+          reminder.longitude
+        );
+        
+        return distance <= nearbyRadius;
+      });
+    }
+
+    // Create a reminder card element
+    function createReminderCard(reminder) {
+      const card = document.createElement('div');
+      card.className = 'reminder-card';
+      card.dataset.id = reminder.id;
+      
+      // Add priority class if reminder is priority
+      if (reminder.isPriority) {
+        card.classList.add('priority-reminder');
+      }
+      
+      const header = document.createElement('div');
+      header.className = 'reminder-header';
+      
+      const titleContainer = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'reminder-title';
+      title.textContent = reminder.title;
+      titleContainer.appendChild(title);
+      
+      // Add badges
+      const badgesContainer = document.createElement('div');
+      
+      // Only show priority badge if manually set as priority
+      if (reminder.isPriority) {
+        const priorityBadge = document.createElement('span');
+        priorityBadge.className = 'badge badge-priority';
+        priorityBadge.innerHTML = '<i class="fas fa-star"></i> Priority';
+        badgesContainer.appendChild(priorityBadge);
+      } 
+      // Otherwise, show status badge based on proximity
+      else if (state.userLocation) {
+        const distance = calculateDistance(
+          state.userLocation.latitude,
+          state.userLocation.longitude,
+          reminder.latitude,
+          reminder.longitude
+        );
+        
+        if (distance <= reminder.radius) {
+          // User is inside the reminder radius
+          const activeBadge = document.createElement('span');
+          activeBadge.className = 'badge badge-success';
+          activeBadge.innerHTML = '<i class="fas fa-check-circle"></i> Active';
+          badgesContainer.appendChild(activeBadge);
+        } else if (distance <= 500) {
+          // User is approaching the reminder (within 500m)
+          const upcomingBadge = document.createElement('span');
+          upcomingBadge.className = 'badge badge-info';
+          upcomingBadge.innerHTML = '<i class="fas fa-hourglass-half"></i> Upcoming';
+          badgesContainer.appendChild(upcomingBadge);
+        }
+      }
+      
+      // Badge for notification type
+      const typeBadge = document.createElement('span');
+      typeBadge.className = 'badge badge-secondary';
+      switch (reminder.notificationType) {
+        case 'arrival':
+          typeBadge.textContent = 'On Arrival';
+          break;
+        case 'departure':
+          typeBadge.textContent = 'On Departure';
+          break;
+        case 'both':
+          typeBadge.textContent = 'Arrival & Departure';
+          break;
+      }
+      badgesContainer.appendChild(typeBadge);
+      
+      header.appendChild(titleContainer);
+      header.appendChild(badgesContainer);
+      
+      // Description
+      let content = '';
+      if (reminder.description) {
+        content += `<div class="reminder-description">${reminder.description}</div>`;
+      }
+      
+      // Location info
+      content += `
+        <div class="reminder-info">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>${reminder.locationName}</span>
+        </div>
+        <div class="reminder-info">
+          <i class="fas fa-circle-notch"></i>
+          <span>Radius: ${reminder.radius}m</span>
+        </div>
+      `;
+      
+      // Actions
+      const actions = document.createElement('div');
+      actions.className = 'reminder-actions';
+      
+      const leftActions = document.createElement('div');
+      
+      const editBtn = document.createElement('button');
+      editBtn.className = 'action-btn';
+      editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+      editBtn.title = "Edit Reminder";
+      editBtn.addEventListener('click', () => editReminder(reminder.id));
+      
+      leftActions.appendChild(editBtn);
+      
+      const rightActions = document.createElement('div');
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'action-btn delete-btn';
+      deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      deleteBtn.title = "Delete Reminder";
+      deleteBtn.addEventListener('click', () => confirmDeleteReminder(reminder.id));
+      
+      rightActions.appendChild(deleteBtn);
+      
+      actions.appendChild(leftActions);
+      actions.appendChild(rightActions);
+      
+      // Assemble card
+      card.innerHTML = header.outerHTML + content;
+      card.appendChild(actions);
+      
+      return card;
+    }
+
+    // Render timetable based on active day
+    function renderTimetable() {
+      const container = document.querySelector('.day-schedule-container');
+      const noClasses = document.getElementById('no-classes');
+      
+      // Get classes for the active day
+      const classes = state.weekSchedule[state.activeDay] || [];
+      
+      // Clear container with animation
+      const existingCards = container.querySelectorAll('.class-card');
+      existingCards.forEach(card => {
+        card.classList.add('fade-out');
+      });
+      
+      // Clear after animation
+      setTimeout(() => {
+        container.innerHTML = '';
+        
+        // Show empty state if no classes
+        if (classes.length === 0) {
+          if (noClasses) {
+            noClasses.style.display = 'flex';
+            container.appendChild(noClasses);
+          } else {
+            const emptyState = createEmptyState('No classes scheduled', 'fa-calendar-alt', 'Add a class to your timetable');
+            const addBtn = document.createElement('button');
+            addBtn.className = 'secondary-btn add-class-empty-btn';
+            addBtn.innerHTML = '<i class="fas fa-plus"></i> Add Class';
+            addBtn.addEventListener('click', openClassModal);
+            emptyState.appendChild(addBtn);
+            container.appendChild(emptyState);
+          }
+          return;
+        }
+        
+        // Hide empty state
+        if (noClasses) {
+          noClasses.style.display = 'none';
+        }
+        
+        // Create class cards with staggered animation
+        classes.forEach((classItem, index) => {
+          const card = createClassCard(classItem);
+          card.style.animationDelay = `${index * 0.1}s`;
+          card.classList.add('slide-up');
+          container.appendChild(card);
+        });
+      }, existingCards.length > 0 ? 300 : 0);
+    }
+
+    // Create a class card element
+    function createClassCard(classItem) {
+      const card = document.createElement('div');
+      card.className = 'class-card';
+      card.dataset.id = classItem.id;
+      
+      // Add status classes
+      if (isClassActive(classItem)) {
+        card.classList.add('active-class');
+      } else if (isClassUpcoming(classItem)) {
+        card.classList.add('upcoming-class');
+      }
+      
+      const header = document.createElement('div');
+      header.className = 'class-header';
+      
+      const titleContainer = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'class-title';
+      title.textContent = classItem.title;
+      titleContainer.appendChild(title);
+      
+      // Add badges
+      const badgesContainer = document.createElement('div');
+      
+      // Status badges
+      if (isClassActive(classItem)) {
+        const activeBadge = document.createElement('span');
+        activeBadge.className = 'badge badge-success';
+        activeBadge.textContent = 'Active Now';
+        badgesContainer.appendChild(activeBadge);
+      } else if (isClassUpcoming(classItem)) {
+        const upcomingBadge = document.createElement('span');
+        upcomingBadge.className = 'badge badge-info';
+        upcomingBadge.textContent = 'Upcoming';
+        badgesContainer.appendChild(upcomingBadge);
+      }
+      
+      const classBadge = document.createElement('span');
+      classBadge.className = 'badge badge-secondary';
+      classBadge.textContent = 'Class';
+      badgesContainer.appendChild(classBadge);
+      
+      header.appendChild(titleContainer);
+      header.appendChild(badgesContainer);
+      
+      // Class details
+      let content = `
+        <div class="class-info">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>${classItem.location}</span>
+        </div>
+        <div class="class-info">
+          <i class="fas fa-clock"></i>
+          <span>${formatTime(classItem.startTime)} - ${formatTime(classItem.endTime)}</span>
+        </div>
+      `;
+      
+      // Actions
+      const actions = document.createElement('div');
+      actions.className = 'class-actions';
+      
+      const leftActions = document.createElement('div');
+      
+      const reminderBtn = document.createElement('button');
+      reminderBtn.className = 'secondary-btn';
+      reminderBtn.innerHTML = '<i class="fas fa-bell"></i> Set Reminder';
+      reminderBtn.addEventListener('click', () => createReminderFromClass(classItem));
+      
+      leftActions.appendChild(reminderBtn);
+      
+      const rightActions = document.createElement('div');
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'action-btn delete-btn';
+      deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      deleteBtn.title = "Delete Class";
+      deleteBtn.addEventListener('click', () => confirmDeleteClass(classItem.id));
+      
+      rightActions.appendChild(deleteBtn);
+      
+      actions.appendChild(leftActions);
+      actions.appendChild(rightActions);
+      
+      // Assemble card
+      card.innerHTML = header.outerHTML + content;
+      card.appendChild(actions);
+      
+      return card;
+    }
+
+    // Format time for display
+    function formatTime(timeString) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    }
+
+    // Create an empty state element
+    function createEmptyState(message, icon, subMessage) {
+      const emptyState = document.createElement('div');
+      emptyState.className = 'empty-state';
+      
+      const iconElement = document.createElement('i');
+      iconElement.className = `fas ${icon}`;
+      
+      const messageElement = document.createElement('p');
+      messageElement.textContent = message;
+      
+      emptyState.appendChild(iconElement);
+      emptyState.appendChild(messageElement);
+      
+      if (subMessage) {
+        const subMessageElement = document.createElement('p');
+        subMessageElement.textContent = subMessage;
+        subMessageElement.style.fontSize = '0.925rem';
+        subMessageElement.style.marginTop = '0.75rem';
+        emptyState.appendChild(subMessageElement);
+      }
+      
+      return emptyState;
+    }
+
+    // Function to open reminder modal with location data (for pin mode)
+    function openReminderModalWithLocation(locationData) {
+      console.log("Opening reminder modal with location data:", locationData);
+      // First, open the standard modal
+      const reminderModal = document.getElementById('reminder-modal');
+      const reminderForm = document.getElementById('reminder-form');
+      const locationSuggestions = document.getElementById('location-suggestions');
+      
+      if (!reminderModal || !reminderForm) {
+        console.error("Reminder modal or form not found in the DOM");
+        showToast('Error opening reminder form', 'error');
+        return;
+      }
+      
+      // Reset form
+      reminderForm.reset();
+      reminderForm.dataset.editId = '';
+      
+      // Set default radius from settings
+      const radiusInput = document.getElementById('reminder-radius');
+      if (radiusInput) {
+        radiusInput.value = state.settings.notificationDistance;
+        updateRadiusValue();
+      }
+      
+      // Set modal title
+      const modalTitle = reminderModal.querySelector('.modal-header h3');
+      if (modalTitle) {
+        modalTitle.textContent = 'Add New Reminder';
+      }
+
+      // Clear suggestions
+      if (locationSuggestions) {
+        locationSuggestions.innerHTML = '';
+      }
+      
+      // Make modal visible before animation
+      reminderModal.style.display = 'block';
+      
+      // Add blur to main content
+      const mainElement = document.querySelector('main');
+      const headerElement = document.querySelector('header');
+      if (mainElement) mainElement.classList.add('blur-bg');
+      if (headerElement) headerElement.classList.add('blur-bg');
+      
+      // Show animation and set location data
+      setTimeout(() => {
+        reminderModal.classList.add('show');
+        
+        // Set the location input values
+        const locationInput = document.getElementById('location-input');
+        if (locationInput && locationData) {
+          locationInput.value = locationData.value || '';
+          locationInput.dataset.lat = locationData.lat || '';
+          locationInput.dataset.lng = locationData.lng || '';
+          locationInput.dataset.customLocation = 'true';
+          
+          // Add a visual highlight to the input
+          locationInput.classList.add('highlight-input');
+          setTimeout(() => locationInput.classList.remove('highlight-input'), 1000);
+          
+          // Show a toast notification
+          showToast('Location set from map pin!', 'success');
+        } else {
+          console.error("Location input element not found or location data missing");
+          showToast('Error setting location data', 'error');
+        }
+      }, 10);
+    }
+    
+    // Open reminder modal
+    function openReminderModal(isEditing = false) {
+      console.log("Opening standard reminder modal, isEditing:", isEditing);
+      
+      // Initialize element references
+      const reminderModal = document.getElementById('reminder-modal');
+      const reminderForm = document.getElementById('reminder-form');
+      const locationSuggestions = document.getElementById('location-suggestions');
+      
+      if (!reminderModal || !reminderForm) {
+        console.error("Reminder modal or form not found in the DOM");
+        showToast('Error opening reminder form', 'error');
+        return;
+      }
+      
+      // Only reset form when not editing
+      if (!isEditing) {
+        reminderForm.reset();
+        reminderForm.dataset.editId = '';
+        
+        // Set default radius from settings
+        const radiusInput = document.getElementById('reminder-radius');
+        if (radiusInput) {
+          radiusInput.value = state.settings.notificationDistance;
+          updateRadiusValue();
+        }
+        
+        // Set modal title
+        const modalTitle = reminderModal.querySelector('.modal-header h3');
+        if (modalTitle) {
+          modalTitle.textContent = 'Add New Reminder';
+        }
+      }
+      
+      // Clear suggestions
+      if (locationSuggestions) {
+        locationSuggestions.innerHTML = '';
+      }
+      
+      // Make modal visible before animation
+      reminderModal.style.display = 'block';
+      
+      // Add blur to main content
+      const mainElement = document.querySelector('main');
+      const headerElement = document.querySelector('header');
+      if (mainElement) mainElement.classList.add('blur-bg');
+      if (headerElement) headerElement.classList.add('blur-bg');
+      
+      // Show animation
+      setTimeout(() => {
+        reminderModal.classList.add('show');
+      }, 10);
+    }
+
+    // Close reminder modal
+    function closeReminderModal() {
+      const reminderModal = document.getElementById('reminder-modal');
+      const locationSuggestions = document.getElementById('location-suggestions');
+      
+      if (!reminderModal) {
+        console.error("Reminder modal not found in the DOM");
+        return;
+      }
+      
+      reminderModal.classList.remove('show');
+      
+      // Remove blur from main content
+      const mainElement = document.querySelector('main');
+      const headerElement = document.querySelector('header');
+      if (mainElement) mainElement.classList.remove('blur-bg');
+      if (headerElement) headerElement.classList.remove('blur-bg');
+      
+      // Hide modal after animation finishes
+      setTimeout(() => {
+        reminderModal.style.display = 'none';
+        if (locationSuggestions) {
+          locationSuggestions.innerHTML = '';
+        }
+      }, 300);
+    }
+
+    // Open class modal
+    function openClassModal() {
+      const classForm = document.getElementById('class-form');
+      const classModal = document.getElementById('class-modal');
+      const classLocationSuggestions = document.getElementById('class-location-suggestions');
+      
+      if (!classForm || !classModal) {
+        console.error("Class modal or form elements not found");
+        showToast('Error opening class form', 'error');
+        return;
+      }
+      
+      classForm.reset();
+      classModal.style.display = 'block';
+      
+      if (classLocationSuggestions) {
+        classLocationSuggestions.innerHTML = '';
+      }
+      
+      // Set the day selector to the active day
+      const daySelector = document.getElementById('class-day');
+      if (daySelector) {
+        daySelector.value = state.activeDay;
+      }
+      
+      // Add blur to main content
+      const mainElement = document.querySelector('main');
+      const headerElement = document.querySelector('header');
+      if (mainElement) mainElement.classList.add('blur-bg');
+      if (headerElement) headerElement.classList.add('blur-bg');
+      
+      // Show animation
+      setTimeout(() => {
+        classModal.classList.add('show');
+      }, 10);
+    }
+
+    // Close class modal
+    function closeClassModal() {
+      const classModal = document.getElementById('class-modal');
+      const classLocationSuggestions = document.getElementById('class-location-suggestions');
+      
+      if (!classModal) {
+        console.error("Class modal element not found");
+        return;
+      }
+      
+      classModal.classList.remove('show');
+      
+      // Remove blur from main content
+      const mainElement = document.querySelector('main');
+      const headerElement = document.querySelector('header');
+      if (mainElement) mainElement.classList.remove('blur-bg');
+      if (headerElement) headerElement.classList.remove('blur-bg');
+      
+      setTimeout(() => {
+        classModal.style.display = 'none';
+        if (classLocationSuggestions) {
+          classLocationSuggestions.innerHTML = '';
+        }
+      }, 300);
+    }
+
+    // Update radius value display
+    function updateRadiusValue() {
+      const reminderRadiusSlider = document.getElementById('reminder-radius');
+      const radiusValue = document.getElementById('radius-value');
+      
+      if (reminderRadiusSlider && radiusValue) {
+        radiusValue.textContent = `${reminderRadiusSlider.value}m`;
+      } else {
+        console.error("Could not find radius slider or value display elements");
+      }
+    }
+
+    // Handle reminder submission
+    function handleReminderSubmit(e) {
+      e.preventDefault();
+      
+      const titleInput = document.getElementById('reminder-title');
+      const locationInput = document.getElementById('location-input');
+      const title = titleInput.value.trim();
+      const description = document.getElementById('reminder-description').value.trim();
+      const locationName = locationInput.value.trim();
+      const notificationType = document.getElementById('notification-type').value;
+      const radius = parseInt(document.getElementById('reminder-radius').value);
+      const isPriority = document.getElementById('reminder-priority').checked;
+      
+      // Validate required fields
+      if (!title) {
+        titleInput.focus();
+        showToast('Please enter a reminder title', 'error');
+        return;
+      }
+      
+      if (!locationName) {
+        locationInput.focus();
+        showToast('Please enter a location', 'error');
+        return;
+      }
+      
+      // Get coordinates from the location input dataset or find from commonLocations
+      let latitude, longitude, locationAddress;
+      
+      if (locationInput.dataset.lat && locationInput.dataset.lng) {
+        // Coordinates are stored in the dataset from the selection
+        latitude = parseFloat(locationInput.dataset.lat);
+        longitude = parseFloat(locationInput.dataset.lng);
+        
+        // Find the location address if it's from common locations
+        const matchedLocation = commonLocations.find(loc => 
+          loc.name.toLowerCase() === locationName.toLowerCase());
+        
+        locationAddress = matchedLocation ? matchedLocation.address : locationName;
+      } else {
+        // Try to find location in commonLocations
+        const locationMatch = commonLocations.find(loc => 
+          loc.name.toLowerCase() === locationName.toLowerCase() ||
+          locationName.includes(loc.name)
+        );
+        
+        if (locationMatch) {
+          latitude = locationMatch.coordinates.lat;
+          longitude = locationMatch.coordinates.lng;
+          locationAddress = locationMatch.address;
+        } else {
+          // Use default coordinates for custom location
+          latitude = 37.7749;
+          longitude = -122.4194;
+          locationAddress = locationName;
+          
+          // Show toast about using custom location
+          showToast('Using custom location', 'info');
+        }
+      }
+      
+      // Function to create a new reminder
+      function createNewReminder() {
+        const newReminder = {
+          id: Date.now(),
+          title,
+          description,
+          locationName,
+          locationAddress,
+          latitude,
+          longitude,
+          notificationType,
+          radius,
+          isPriority,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Add to state
+        state.reminders.push(newReminder);
+        
+        // Show toast notification
+        showToast('Reminder created successfully', 'success');
+        
+        finishSubmission();
+      }
+      
+      // Function to update an existing reminder
+      function updateReminder(reminder) {
+        reminder.title = title;
+        reminder.description = description;
+        reminder.locationName = locationName;
+        reminder.locationAddress = locationAddress;
+        reminder.latitude = latitude;
+        reminder.longitude = longitude;
+        reminder.notificationType = notificationType;
+        reminder.radius = radius;
+        reminder.isPriority = isPriority;
+        
+        // Show toast notification
+        showToast('Reminder updated successfully', 'success');
+        
+        // Remove edit ID
+        delete reminderForm.dataset.editId;
+        
+        finishSubmission();
+      }
+      
+      // Function to finish the submission process
+      function finishSubmission() {
+        // Save to localStorage
+        saveToLocalStorage();
+        
+        // Update UI
+        renderReminders();
+        
+        // Update map markers if on map view
+        if (state.activeTab === 'map' && state.map) {
+          updateMapMarkers();
+        }
+        
+        // Close modal
+        closeReminderModal();
+      }
+      
+      // Check if editing or creating
+      const reminderIdToEdit = reminderForm.dataset.editId;
+      
+      if (reminderIdToEdit) {
+        // Update existing reminder
+        const reminder = state.reminders.find(r => r.id === parseInt(reminderIdToEdit));
+        
+        if (reminder) {
+          // Check for duplicate with same title and location but not the current one
+          const isDuplicate = state.reminders.some(r => 
+            r.id !== parseInt(reminderIdToEdit) &&
+            r.title.toLowerCase() === title.toLowerCase() &&
+            r.locationName.toLowerCase() === locationName.toLowerCase() &&
+            Math.abs(r.latitude - latitude) < 0.0001 &&
+            Math.abs(r.longitude - longitude) < 0.0001
+          );
+          
+          if (isDuplicate) {
+            // Show confirmation dialog for duplicate
+            showAlertDialog({
+              icon: 'warning',
+              title: 'Duplicate Reminder',
+              message: 'A reminder with this title and location already exists. Do you want to update this reminder anyway?',
+              confirmText: 'Update Anyway',
+              cancelText: 'Cancel',
+              confirmClass: 'delete-confirm',
+              onConfirm: () => updateReminder(reminder)
+            });
+            return;
+          }
+          
+          // No duplicate, update the reminder
+          updateReminder(reminder);
+        }
+      } else {
+        // Check for duplicate with same title and location
+        const isDuplicate = state.reminders.some(r => 
+          r.title.toLowerCase() === title.toLowerCase() &&
+          r.locationName.toLowerCase() === locationName.toLowerCase() &&
+          Math.abs(r.latitude - latitude) < 0.0001 &&
+          Math.abs(r.longitude - longitude) < 0.0001
+        );
+        
+        if (isDuplicate) {
+          // Show confirmation dialog for duplicate
+          showAlertDialog({
+            icon: 'warning',
+            title: 'Duplicate Reminder',
+            message: 'A reminder with this title and location already exists. Do you want to create it anyway?',
+            confirmText: 'Create Anyway',
+            cancelText: 'Cancel',
+            confirmClass: 'delete-confirm',
+            onConfirm: createNewReminder
+          });
+          return;
+        }
+        
+        // No duplicate, create new reminder
+        createNewReminder();
+      }
+    }
+
+    // Handle class submission
+    function handleClassSubmit(e) {
+      e.preventDefault();
+      
+      const titleInput = document.getElementById('class-title');
+      const locationInput = document.getElementById('class-location');
+      const title = titleInput.value.trim();
+      const location = locationInput.value.trim();
+      const startTime = document.getElementById('start-time').value;
+      const endTime = document.getElementById('end-time').value;
+      const day = document.getElementById('class-day').value;
+      
+      // Basic validation
+      if (!title) {
+        titleInput.focus();
+        showToast('Please enter a class title', 'error');
+        return;
+      }
+      
+      if (!location) {
+        locationInput.focus();
+        showToast('Please enter a location', 'error');
+        return;
+      }
+      
+      // Validate times
+      if (startTime >= endTime) {
+        showToast('End time must be after start time', 'error');
+        return;
+      }
+      
+      // Get coordinates from the location input dataset or find from commonLocations
+      let coordinates;
+      
+      if (locationInput.dataset.lat && locationInput.dataset.lng) {
+        // Coordinates are stored in the dataset from the selection
+        coordinates = {
+          lat: parseFloat(locationInput.dataset.lat),
+          lng: parseFloat(locationInput.dataset.lng)
+        };
+      } else {
+        // Try to find location in commonLocations
+        const locationMatch = commonLocations.find(loc => 
+          loc.name.toLowerCase() === location.toLowerCase() ||
+          location.includes(loc.name)
+        );
+        
+        if (locationMatch) {
+          coordinates = locationMatch.coordinates;
+        } else {
+          // Use default coordinates for custom location
+          coordinates = { lat: 37.7749, lng: -122.4194 };
+          
+          // Show toast about using custom location
+          showToast('Using custom location coordinates', 'info');
+        }
+      }
+      
+      // Generate a new ID
+      const existingIds = Object.values(state.weekSchedule)
+        .flat()
+        .map(c => c.id);
+      const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+      
+      // Create new class
+      const newClass = {
+        id: newId,
+        title,
+        location,
+        startTime,
+        endTime,
+        locationCoordinates: coordinates
+      };
+      
+      // Add to state
+      if (!state.weekSchedule[day]) {
+        state.weekSchedule[day] = [];
+      }
+      
+      state.weekSchedule[day].push(newClass);
+      
+      // Save to localStorage
+      saveToLocalStorage();
+      
+      // Update UI
+      if (day === state.activeDay) {
+        renderTimetable();
+      }
+      
+      // Close modal
+      closeClassModal();
+      
+      // Show toast notification
+      showToast(`Class added to ${day}'s schedule`, 'success');
+      
+      // Create reminder if enabled in settings
+      if (state.settings.classReminders) {
+        createReminderFromClass(newClass);
+      }
+    }
+
+    // Confirm before deleting a reminder
+    function confirmDeleteReminder(id) {
+      showAlert(
+        'Delete Reminder', 
+        'Are you sure you want to delete this reminder?', 
+        'warning',
+        (confirmed) => {
+          if (confirmed) {
+            deleteReminder(id);
+          }
+        }
+      );
+    }
+
+    // Delete a reminder
+    function deleteReminder(id) {
+      // Find the reminder card
+      const card = document.querySelector(`.reminder-card[data-id="${id}"]`);
+      
+      if (card) {
+        // Add deleting animation class
+        card.classList.add('deleting');
+        
+        // Remove from state after animation completes
+        setTimeout(() => {
+          state.reminders = state.reminders.filter(r => r.id !== parseInt(id));
+          
+          // Save to localStorage
+          saveToLocalStorage();
+          
+          // Update UI
+          renderReminders();
+          
+          // Update map markers if on map view
+          if (state.activeTab === 'map' && state.map) {
+            updateMapMarkers();
+          }
+          
+          // Show toast notification
+          showToast('Reminder deleted successfully', 'info');
+        }, 500);
+      } else {
+        // If card not found, delete immediately
+        state.reminders = state.reminders.filter(r => r.id !== parseInt(id));
+        saveToLocalStorage();
+        renderReminders();
+        
+        // Update map if needed
+        if (state.activeTab === 'map' && state.map) {
+          updateMapMarkers();
+        }
+      }
+    }
+
+    // Confirm before deleting a class
+    function confirmDeleteClass(id) {
+      showAlert(
+        'Delete Class', 
+        'Are you sure you want to delete this class?', 
+        'warning',
+        (confirmed) => {
+          if (confirmed) {
+            deleteClass(id);
+          }
+        }
+      );
+    }
+
+    // Delete a class
+    function deleteClass(id) {
+      // Find the class card
+      const card = document.querySelector(`.class-card[data-id="${id}"]`);
+      
+      if (card) {
+        // Add deleting animation class
+        card.classList.add('deleting');
+        
+        // Remove from state after animation completes
+        setTimeout(() => {
+          // Find the day that contains this class
+          for (const day in state.weekSchedule) {
+            state.weekSchedule[day] = state.weekSchedule[day].filter(c => c.id !== parseInt(id));
+          }
+          
+          // Save to localStorage
+          saveToLocalStorage();
+          
+          // Update UI
+          renderTimetable();
+          
+          // Show toast notification
+          showToast('Class deleted successfully', 'info');
+        }, 500);
+      } else {
+        // If card not found, delete immediately
+        for (const day in state.weekSchedule) {
+          state.weekSchedule[day] = state.weekSchedule[day].filter(c => c.id !== parseInt(id));
+        }
+        saveToLocalStorage();
+        renderTimetable();
+      }
+    }
+
+    // Edit a reminder
+    function editReminder(id) {
+      console.log("Editing reminder with ID:", id);
+      
+      // Find the reminder
+      const reminder = state.reminders.find(r => r.id === parseInt(id));
+      
+      if (!reminder) {
+        console.error("Reminder not found with ID:", id);
+        showToast('Reminder not found', 'error');
+        return;
+      }
+      
+      // Open modal first with isEditing = true to prevent form reset
+      openReminderModal(true);
+      
+      // Get form elements
+      const reminderForm = document.getElementById('reminder-form');
+      const reminderModal = document.getElementById('reminder-modal');
+      const locationInput = document.getElementById('location-input');
+      
+      if (!reminderForm || !reminderModal || !locationInput) {
+        console.error("Required DOM elements not found for editing");
+        showToast('Error editing reminder', 'error');
+        return;
+      }
+      
+      // Set form values
+      const titleInput = document.getElementById('reminder-title');
+      const descriptionInput = document.getElementById('reminder-description');
+      const notificationTypeSelect = document.getElementById('notification-type');
+      const radiusInput = document.getElementById('reminder-radius');
+      const priorityCheckbox = document.getElementById('reminder-priority');
+      
+      if (titleInput) titleInput.value = reminder.title;
+      if (descriptionInput) descriptionInput.value = reminder.description || '';
+      if (locationInput) locationInput.value = reminder.locationName;
+      if (notificationTypeSelect) notificationTypeSelect.value = reminder.notificationType;
+      if (radiusInput) radiusInput.value = reminder.radius;
+      if (priorityCheckbox) priorityCheckbox.checked = reminder.isPriority;
+      
+      // Also set the location coordinates in the dataset
+      if (locationInput) {
+        locationInput.dataset.lat = reminder.latitude;
+        locationInput.dataset.lng = reminder.longitude;
+      }
+      
+      // Update radius display
+      updateRadiusValue();
+      
+      // Set edit ID on form
+      if (reminderForm) {
+        reminderForm.dataset.editId = reminder.id;
+      }
+      
+      // Change modal title
+      const modalTitle = reminderModal.querySelector('.modal-header h3');
+      if (modalTitle) {
+        modalTitle.textContent = 'Edit Reminder';
+      }
+    }
+
+    // Create a reminder from a class
+    function createReminderFromClass(classItem) {
+      // Create reminder data
+      const reminder = {
+        id: Date.now(),
+        title: classItem.title,
+        description: `Class at ${classItem.location}`,
+        locationName: classItem.location,
+        locationAddress: classItem.location,
+        latitude: classItem.locationCoordinates.lat,
+        longitude: classItem.locationCoordinates.lng,
+        notificationType: 'arrival',
+        radius: state.settings.notificationDistance,
+        isPriority: true,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Check if similar reminder already exists
+      const existingReminder = state.reminders.find(r => 
+        r.title === reminder.title && 
+        r.locationName === reminder.locationName
+      );
+      
+      if (existingReminder) {
+        showToast('A reminder for this class already exists', 'info');
+        return;
+      }
+      
+      // Add to state
+      state.reminders.push(reminder);
+      
+      // Save to localStorage
+      saveToLocalStorage();
+      
+      // Update UI if on dashboard
+      if (state.activeTab === 'dashboard') {
+        renderReminders();
+      }
+      
+      // Update map markers if on map view
+      if (state.activeTab === 'map' && state.map) {
+        updateMapMarkers();
+      }
+      
+      // Show toast notification
+      showToast('Reminder created for class', 'success');
+    }
+
+    // Handle location search
+    function handleLocationSearch() {
+      const locationInput = document.getElementById('location-input');
+      const locationSuggestions = document.getElementById('location-suggestions');
+      
+      if (!locationInput || !locationSuggestions) {
+        console.error("Location input or suggestions container not found");
+        return;
+      }
+      
+      const query = locationInput.value.trim().toLowerCase();
+      
+      // Clear suggestions
+      locationSuggestions.innerHTML = '';
+      
+      if (query.length < 1) {
+        locationSuggestions.style.display = 'none';
+        return;
+      }
+      
+      // Find matching locations
+      const matches = commonLocations.filter(location => 
+        location.name.toLowerCase().includes(query) || 
+        location.address.toLowerCase().includes(query)
+      );
+      
+      // Add option for custom location
+      const customOption = document.createElement('div');
+      customOption.className = 'location-suggestion';
+      customOption.innerHTML = `
+        <i class="fas fa-plus-circle"></i>
+        <div>
+          <div class="location-suggestion-name">Use "${locationInput.value}"</div>
+          <div class="location-suggestion-address">Create custom location</div>
+        </div>
+      `;
+      
+      customOption.addEventListener('click', () => {
+        locationInput.value = locationInput.value;
+        locationInput.dataset.customLocation = 'true';
+        locationInput.dataset.lat = '37.7749';  // Default to San Francisco if custom
+        locationInput.dataset.lng = '-122.4194';
+        locationSuggestions.style.display = 'none';
+      });
+      
+      // Create suggestion elements for matches
+      if (matches.length > 0) {
+        matches.forEach(location => {
+          const suggestion = document.createElement('div');
+          suggestion.className = 'location-suggestion';
+          
+          suggestion.innerHTML = `
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <div class="location-suggestion-name">${location.name}</div>
+              <div class="location-suggestion-address">${location.address}</div>
+            </div>
+          `;
+          
+          suggestion.addEventListener('click', () => {
+            locationInput.value = location.name;
+            locationInput.dataset.customLocation = 'false';
+            locationInput.dataset.lat = location.coordinates.lat;
+            locationInput.dataset.lng = location.coordinates.lng;
+            locationSuggestions.style.display = 'none';
+          });
+          
+          locationSuggestions.appendChild(suggestion);
+        });
+      }
+      
+      // Add custom option at the end
+      locationSuggestions.appendChild(customOption);
+      
+      // Show suggestions
+      locationSuggestions.style.display = 'block';
+    }
+
+    // Handle class location search
+    function handleClassLocationSearch() {
+      const classLocationInput = document.getElementById('class-location');
+      const classLocationSuggestions = document.getElementById('class-location-suggestions');
+      
+      if (!classLocationInput || !classLocationSuggestions) {
+        console.error("Class location input or suggestions container not found");
+        return;
+      }
+      
+      const query = classLocationInput.value.trim().toLowerCase();
+      
+      // Clear suggestions
+      classLocationSuggestions.innerHTML = '';
+      
+      if (query.length < 1) {
+        classLocationSuggestions.style.display = 'none';
+        return;
+      }
+      
+      // Find matching locations
+      const matches = commonLocations.filter(location => 
+        location.name.toLowerCase().includes(query) || 
+        location.address.toLowerCase().includes(query)
+      );
+      
+      // Add option for custom location
+      const customOption = document.createElement('div');
+      customOption.className = 'location-suggestion';
+      customOption.innerHTML = `
+        <i class="fas fa-plus-circle"></i>
+        <div>
+          <div class="location-suggestion-name">Use "${classLocationInput.value}"</div>
+          <div class="location-suggestion-address">Create custom location</div>
+        </div>
+      `;
+      
+      customOption.addEventListener('click', () => {
+        classLocationInput.value = classLocationInput.value;
+        classLocationInput.dataset.customLocation = 'true';
+        classLocationInput.dataset.lat = '37.7749';  // Default to San Francisco if custom
+        classLocationInput.dataset.lng = '-122.4194';
+        classLocationSuggestions.style.display = 'none';
+      });
+      
+      // Create suggestion elements for matches
+      if (matches.length > 0) {
+        matches.forEach(location => {
+          const suggestion = document.createElement('div');
+          suggestion.className = 'location-suggestion';
+          
+          suggestion.innerHTML = `
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <div class="location-suggestion-name">${location.name}</div>
+              <div class="location-suggestion-address">${location.address}</div>
+            </div>
+          `;
+          
+          suggestion.addEventListener('click', () => {
+            classLocationInput.value = location.name;
+            classLocationInput.dataset.customLocation = 'false';
+            classLocationInput.dataset.lat = location.coordinates.lat;
+            classLocationInput.dataset.lng = location.coordinates.lng;
+            classLocationSuggestions.style.display = 'none';
+          });
+          
+          classLocationSuggestions.appendChild(suggestion);
+        });
+      }
+      
+      // Add custom option at the end
+      classLocationSuggestions.appendChild(customOption);
+      
+      // Show suggestions
+      classLocationSuggestions.style.display = 'block';
+    }
+    
+    // Map search functionality
+    function handleMapSearch() {
+      const query = mapSearchInput.value.trim().toLowerCase();
+      
+      // Clear suggestions
+      mapSearchSuggestions.innerHTML = '';
+      
+      if (query.length < 1) {
+        mapSearchSuggestions.style.display = 'none';
+        return;
+      }
+      
+      // Find matching locations
+      const matches = commonLocations.filter(location => 
+        location.name.toLowerCase().includes(query) || 
+        location.address.toLowerCase().includes(query)
+      );
+      
+      // Add custom location option
+      matches.push({
+        name: `Use "${mapSearchInput.value}"`,
+        address: "Custom location",
+        coordinates: { lat: 37.7749, lng: -122.4194 } // Default location 
+      });
+      
+      if (matches.length === 0) {
+        mapSearchSuggestions.style.display = 'none';
+        return;
+      }
+      
+      // Create and display suggestions
+      matches.forEach(location => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'location-suggestion';
+        suggestionItem.innerHTML = `
+          <i class="fas fa-map-marker-alt"></i>
+          <div>
+            <div class="location-suggestion-name">${location.name}</div>
+            <div class="location-suggestion-address">${location.address}</div>
+          </div>
+        `;
+        
+        suggestionItem.addEventListener('click', () => {
+          // Set input value
+          mapSearchInput.value = location.name;
+          mapSearchInput.dataset.lat = location.coordinates.lat;
+          mapSearchInput.dataset.lng = location.coordinates.lng;
+          
+          // Hide suggestions
+          mapSearchSuggestions.style.display = 'none';
+          
+          // Navigate map to this location
+          if (state.map) {
+            state.map.setView([location.coordinates.lat, location.coordinates.lng], 16);
+            
+            // Add a temporary marker at the location
+            if (state.temporaryMapMarker) {
+              state.temporaryMapMarker.setLatLng([location.coordinates.lat, location.coordinates.lng]);
+            } else {
+              state.temporaryMapMarker = L.marker([location.coordinates.lat, location.coordinates.lng], {
+                icon: L.divIcon({
+                  className: 'custom-marker-icon search-marker',
+                  html: '<i class="fas fa-map-pin"></i>',
+                  iconSize: [30, 42],
+                  iconAnchor: [15, 42]
+                })
+              }).addTo(state.map);
+            }
+            
+            // Add a popup to the marker
+            state.temporaryMapMarker.bindPopup(`
+              <div class="map-popup">
+                <h4>${location.name}</h4>
+                <p>${location.address}</p>
+                <button class="primary-btn create-reminder-here-btn">
+                  <i class="fas fa-plus"></i> Create Reminder Here
+                </button>
+              </div>
+            `).openPopup();
+            
+            // Add event listener to the Create Reminder Here button
+            setTimeout(() => {
+              const createBtn = document.querySelector('.create-reminder-here-btn');
+              if (createBtn) {
+                createBtn.addEventListener('click', () => {
+                  openReminderModal();
+                  // Auto-fill the location in the reminder form
+                  const locationInput = document.getElementById('location-input');
+                  locationInput.value = location.name;
+                  locationInput.dataset.lat = location.coordinates.lat.toString();
+                  locationInput.dataset.lng = location.coordinates.lng.toString();
+                  // Highlight the location input field briefly
+                  locationInput.classList.add('highlight-input');
+                  setTimeout(() => locationInput.classList.remove('highlight-input'), 1500);
+                });
+              }
+            }, 100);
+          }
+        });
+        
+        mapSearchSuggestions.appendChild(suggestionItem);
+      });
+      
+      // Display the suggestions
+      mapSearchSuggestions.style.display = 'block';
+    }
+    
+    // Search for a location on the map when search button is clicked
+    function searchMapLocation() {
+      const query = mapSearchInput.value.trim();
+      
+      if (query.length < 2) {
+        showToast('Please enter a search term', 'warning');
+        return;
+      }
+      
+      // If we already have coordinates from a suggestion click, use those
+      if (mapSearchInput.dataset.lat && mapSearchInput.dataset.lng) {
+        const lat = parseFloat(mapSearchInput.dataset.lat);
+        const lng = parseFloat(mapSearchInput.dataset.lng);
+        
+        if (state.map) {
+          state.map.setView([lat, lng], 16);
+          
+          // Add a temporary marker at the location
+          if (state.temporaryMapMarker) {
+            state.temporaryMapMarker.setLatLng([lat, lng]);
+          } else {
+            state.temporaryMapMarker = L.marker([lat, lng], {
+              icon: L.divIcon({
+                className: 'custom-marker-icon search-marker',
+                html: '<i class="fas fa-map-pin"></i>',
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
+              })
+            }).addTo(state.map);
+          }
+          
+          // Add a popup to the marker
+          const locationName = mapSearchInput.value;
+          state.temporaryMapMarker.bindPopup(`
+            <div class="map-popup">
+              <h4>${locationName}</h4>
+              <button class="primary-btn create-reminder-here-btn">
+                <i class="fas fa-plus"></i> Create Reminder Here
+              </button>
+            </div>
+          `).openPopup();
+          
+          // Add event listener to the Create Reminder Here button
+          setTimeout(() => {
+            const createBtn = document.querySelector('.create-reminder-here-btn');
+            if (createBtn) {
+              createBtn.addEventListener('click', () => {
+                openReminderModal();
+                // Auto-fill the location in the reminder form
+                const locationInput = document.getElementById('location-input');
+                locationInput.value = locationName;
+                locationInput.dataset.lat = lat.toString();
+                locationInput.dataset.lng = lng.toString();
+                locationInput.dataset.customLocation = 'true';
+                // Highlight the location input field briefly
+                locationInput.classList.add('highlight-input');
+                setTimeout(() => locationInput.classList.remove('highlight-input'), 1500);
+              });
+            }
+          }, 100);
+        }
+      } else {
+        // Try to find a match in our common locations
+        const match = commonLocations.find(loc => 
+          loc.name.toLowerCase().includes(query.toLowerCase()) || 
+          loc.address.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (match) {
+          // Set the input dataset and trigger the same flow as if a suggestion was clicked
+          mapSearchInput.dataset.lat = match.coordinates.lat.toString();
+          mapSearchInput.dataset.lng = match.coordinates.lng.toString();
+          mapSearchInput.value = match.name;
+          searchMapLocation(); // Call again now that we have coordinates
+        } else {
+          // Use a default location with the search term entered
+          const defaultLat = 37.7749;
+          const defaultLng = -122.4194;
+          
+          // Set the input dataset with default location
+          mapSearchInput.dataset.lat = defaultLat.toString();
+          mapSearchInput.dataset.lng = defaultLng.toString();
+          
+          // Call searchMapLocation again now that we have coordinates
+          searchMapLocation();
+          
+          // Notify user we're using a default location
+          showToast('Using default location. You can drag the pin to adjust.', 'info');
+        }
+      }
+    }
+
+    // Initialize map
+    function initMap() {
+      // If map already initialized, return
+      if (state.map) return;
+      
+      const mapContainer = document.getElementById('map-container');
+      
+      // Clear placeholder
+      mapContainer.innerHTML = '';
+      
+      try {
+        // Create map with default coordinates (San Francisco)
+        state.map = L.map(mapContainer, {
+          center: [37.775, -122.415],
+          zoom: 13,
+          minZoom: 3,
+          preferCanvas: true
+        });
+        
+        // Define base layers
+        const defaultLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          subdomains: ['a', 'b', 'c'],
+          errorTileUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-grey.png' // Fallback tile
+        });
+        
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+        
+        const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+        });
+        
+        // Add default layer to map
+        defaultLayer.addTo(state.map);
+        
+        // Create layer control
+        const baseLayers = {
+          "Default": defaultLayer,
+          "Satellite": satelliteLayer,
+          "Terrain": terrainLayer
+        };
+        
+        // Add layer control to map
+        L.control.layers(baseLayers, null, { position: 'topright' }).addTo(state.map);
+        
+        // Force a map refresh
+        setTimeout(() => {
+          state.map.invalidateSize();
+        }, 100);
+        
+        // Add markers for reminders
+        updateMapMarkers();
+        
+        // Add user location marker if available and coordinates are valid
+        if (state.userLocation && 
+            !isNaN(state.userLocation.latitude) && 
+            !isNaN(state.userLocation.longitude)) {
+          addUserLocationMarker();
+        }
+        
+        // Add click handler to allow selecting locations on the map
+        state.map.on('click', function(e) {
+          const { lat, lng } = e.latlng;
+          
+          // If pin mode is active, the togglePinMode function will handle this event
+          if (state.pinModeActive) return;
+          
+          // If reminder modal is open, update the location input
+          const reminderModal = document.getElementById('reminder-modal');
+          const classModal = document.getElementById('class-modal');
+          
+          if (reminderModal && window.getComputedStyle(reminderModal).display !== 'none') {
+            const locationInput = document.getElementById('location-input');
+            // Update the location input with coordinates
+            locationInput.value = `Location at ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            locationInput.dataset.lat = lat.toString();
+            locationInput.dataset.lng = lng.toString();
+            locationInput.dataset.customLocation = 'true';
+            
+            // Add a temporary marker and show marker hint toast
+            showToast('Location selected from map!', 'success');
+          } else if (classModal && window.getComputedStyle(classModal).display !== 'none') {
+            const classLocationInput = document.getElementById('class-location');
+            // Update the class location input with coordinates
+            classLocationInput.value = `Location at ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            classLocationInput.dataset.lat = lat.toString();
+            classLocationInput.dataset.lng = lng.toString();
+            classLocationInput.dataset.customLocation = 'true';
+            
+            // Show marker hint toast
+            showToast('Location selected for class!', 'success');
+          }
+        });
+        
+        // Log successful map initialization
+        console.log("Map initialized successfully");
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        mapContainer.innerHTML = `
+          <div class="map-placeholder error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Error loading map. Please reload the page.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Update map markers
+    function updateMapMarkers() {
+      if (!state.map) return;
+      
+      // Clear existing markers
+      state.markers.forEach(marker => marker.remove());
+      state.markers = [];
+      
+      // Add markers for reminders with animation delay
+      state.reminders.forEach((reminder, index) => {
+        setTimeout(() => {
+          // Create marker
+          const marker = L.marker([reminder.latitude, reminder.longitude], {
+            opacity: 0
+          }).addTo(state.map);
+          
+          // Add popup
+          marker.bindPopup(`
+            <strong>${reminder.title}</strong><br>
+            ${reminder.description ? reminder.description + '<br>' : ''}
+            <em>${reminder.locationName}</em>
+          `);
+          
+          // Animate in
+          setTimeout(() => {
+            marker.setOpacity(1);
+          }, 100);
+          
+          // Create a circle for the reminder radius
+          const circle = L.circle([reminder.latitude, reminder.longitude], {
+            radius: reminder.radius,
+            color: reminder.isPriority ? '#ef4444' : '#4f46e5',
+            fillColor: reminder.isPriority ? 'rgba(239, 68, 68, 0.2)' : 'rgba(79, 70, 229, 0.2)',
+            fillOpacity: 0.3,
+            weight: 2,
+            opacity: 0
+          }).addTo(state.map);
+          
+          // Animate circle
+          setTimeout(() => {
+            circle.setStyle({
+              opacity: 1,
+              fillOpacity: 0.3
+            });
+          }, 300);
+          
+          // Store markers for later removal
+          state.markers.push(marker);
+          state.markers.push(circle);
+        }, index * 100);
+      });
+      
+      // Update nearby reminders list
+      updateNearbyReminders();
+    }
+
+    // Toggle pin mode for dropping pins on the map
+    function togglePinMode() {
+      const togglePinModeBtn = document.getElementById('toggle-pin-mode-btn');
+      if (!togglePinModeBtn) return;
+      
+      // Toggle state
+      state.pinModeActive = !state.pinModeActive;
+      
+      // Update button text
+      if (state.pinModeActive) {
+        togglePinModeBtn.innerHTML = '<i class="fas fa-map-pin"></i> Pin Mode: On';
+        togglePinModeBtn.classList.add('active');
+        showToast('Pin Mode activated! Click on the map to place a pin.', 'info');
+        
+        // Change cursor on map
+        document.getElementById('map-container').style.cursor = 'crosshair';
+      } else {
+        togglePinModeBtn.innerHTML = '<i class="fas fa-map-pin"></i> Pin Mode: Off';
+        togglePinModeBtn.classList.remove('active');
+        document.getElementById('map-container').style.cursor = '';
+        
+        // Remove any temporary marker
+        if (state.temporaryMapMarker) {
+          state.temporaryMapMarker.remove();
+          state.temporaryMapMarker = null;
+        }
+      }
+      
+      // Modify the map click event behavior based on pin mode
+      if (state.map) {
+        if (state.pinModeActive) {
+          // If this is the first time we're enabling pin mode, we need to modify
+          // the click handler to create a special pin marker
+          state.map.off('click'); // Remove any existing click handlers
+          
+          state.map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            
+            // If pin mode is active, create a pin
+            if (state.pinModeActive) {
+              // Remove any existing temporary marker
+              if (state.temporaryMapMarker) {
+                state.temporaryMapMarker.remove();
+              }
+              
+              // Create a new marker
+              state.temporaryMapMarker = L.marker([lat, lng], {
+                draggable: true,
+                icon: L.divIcon({
+                  className: 'pin-marker',
+                  html: '<i class="fas fa-map-pin"></i>',
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 30]
+                })
+              }).addTo(state.map);
+              
+              // Add popup with options
+              state.temporaryMapMarker.bindPopup(`
+                <strong>New Pin Location</strong><br>
+                <span style="color: #8b5cf6; font-size: 12px;">Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}</span><br>
+                <button id="create-reminder-here" class="map-popup-btn">
+                  <i class="fas fa-bell"></i> Create Reminder Here
+                </button>
+              `).openPopup();
+              
+              // Add event listener to popup content after it's added to the DOM
+              state.temporaryMapMarker.on('popupopen', function() {
+                const createBtn = document.getElementById('create-reminder-here');
+                if (createBtn) {
+                  createBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Get the position first
+                    const position = state.temporaryMapMarker.getLatLng();
+                    
+                    // Close the popup immediately
+                    state.temporaryMapMarker.closePopup();
+                    
+                    // Pre-fill location data to be used when modal opens
+                    const locationData = {
+                      value: `Location at ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`,
+                      lat: position.lat.toString(),
+                      lng: position.lng.toString()
+                    };
+                    
+                    // Open reminder modal directly with location data
+                    openReminderModalWithLocation(locationData);
+                  });
+                }
+              });
+              
+              // Show toast notification
+              showToast('Pin placed! Click on the pin for options.', 'success');
+            }
+          });
+        } else {
+          // Restore default click behavior
+          state.map.off('click');
+          
+          // Re-add the standard click handler for location selection
+          state.map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            
+            // If reminder modal is open, update the location input
+            const reminderModal = document.getElementById('reminder-modal');
+            const classModal = document.getElementById('class-modal');
+            
+            if (reminderModal && window.getComputedStyle(reminderModal).display !== 'none') {
+              const locationInput = document.getElementById('location-input');
+              // Update the location input with coordinates
+              locationInput.value = `Location at ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+              locationInput.dataset.lat = lat.toString();
+              locationInput.dataset.lng = lng.toString();
+              locationInput.dataset.customLocation = 'true';
+              
+              // Show marker hint toast
+              showToast('Location selected from map!', 'success');
+            } else if (classModal && window.getComputedStyle(classModal).display !== 'none') {
+              const classLocationInput = document.getElementById('class-location');
+              // Update the class location input with coordinates
+              classLocationInput.value = `Location at ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+              classLocationInput.dataset.lat = lat.toString();
+              classLocationInput.dataset.lng = lng.toString();
+              classLocationInput.dataset.customLocation = 'true';
+              
+              // Show marker hint toast
+              showToast('Location selected for class!', 'success');
+            }
+          });
+        }
+      }
+    }
+    
+    // Add user location marker
+    function addUserLocationMarker() {
+      if (!state.map || !state.userLocation) return;
+      
+      // Create user marker
+      const userMarker = L.marker(
+        [state.userLocation.latitude, state.userLocation.longitude],
+        {
+          icon: L.divIcon({
+            className: 'user-location-marker',
+            html: '<i class="fas fa-user-circle"></i>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+          })
+        }
+      )
+      .addTo(state.map)
+      .bindPopup('<strong>Your location</strong>');
+      
+      state.markers.push(userMarker);
+      
+      // Add accuracy circle
+      if (state.userLocation.accuracy) {
+        const accuracyCircle = L.circle(
+          [state.userLocation.latitude, state.userLocation.longitude],
+          {
+            radius: state.userLocation.accuracy,
+            color: 'rgba(99, 102, 241, 0.6)',
+            fillColor: 'rgba(99, 102, 241, 0.1)',
+            fillOpacity: 0.3,
+            weight: 2,
+            dashArray: '5, 5'
+          }
+        ).addTo(state.map);
+        
+        state.markers.push(accuracyCircle);
+      }
+    }
+
+    // Center map on user
+    function centerMapOnUser() {
+      if (!state.map) {
+        showToast('Map not initialized yet', 'error');
+        return;
+      }
+      
+      // Set loading state for button
+      const centerButton = document.getElementById('center-map-btn');
+      if (centerButton) {
+        centerButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+        centerButton.disabled = true;
+      }
+      
+      // Reset button after delay
+      const resetButton = () => {
+        if (centerButton) {
+          centerButton.innerHTML = '<i class="fas fa-crosshairs"></i> Center on Me';
+          centerButton.disabled = false;
+        }
+      };
+      
+      if (!state.userLocation) {
+        // Show requesting toast
+        showToast('Requesting your location...', 'info');
+        
+        // Check for geolocation support
+        if (!navigator.geolocation) {
+          showToast('Geolocation is not supported by your browser', 'error');
+          resetButton();
+          return;
+        }
+        
+        // Try to get location with more precise options and longer timeout
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            try {
+              // Update user location
+              state.userLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy
+              };
+              
+              console.log("Got user location:", state.userLocation);
+              
+              if (isNaN(state.userLocation.latitude) || isNaN(state.userLocation.longitude)) {
+                throw new Error("Invalid coordinates");
+              }
+              
+              // Force refresh map if needed
+              if (state.map) {
+                state.map.invalidateSize();
+              }
+              
+              // Now center the map
+              state.map.flyTo(
+                [state.userLocation.latitude, state.userLocation.longitude],
+                16,
+                {
+                  duration: 1
+                }
+              );
+              
+              // Clear previous markers
+              state.markers = state.markers.filter(marker => {
+                if ((marker instanceof L.Marker && marker.getPopup()?.getContent() === '<strong>Your location</strong>') ||
+                    (marker instanceof L.Circle && marker._mRadius === state.userLocation.accuracy)) {
+                  marker.remove();
+                  return false;
+                }
+                return true;
+              });
+              
+              // Add user marker
+              addUserLocationMarker();
+              
+              // Update nearby reminders
+              updateNearbyReminders();
+              
+              // Start tracking
+              startLocationTracking();
+              
+              // Show success notification
+              showToast('Map centered on your location', 'success');
+            } catch (err) {
+              console.error("Error processing location:", err);
+              showToast('Error processing location data', 'error');
+            } finally {
+              resetButton();
+            }
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            
+            let errorMsg = 'Unable to get your location.';
+            if (error.code === 1) {
+              errorMsg = 'Location permission denied. Please enable location in your browser settings.';
+            } else if (error.code === 2) {
+              errorMsg = 'Location unavailable. Please try again later.';
+            } else if (error.code === 3) {
+              errorMsg = 'Location request timed out. Please try again.';
+            }
+            
+            showToast(errorMsg, 'error');
+            resetButton();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        try {
+          // Validate existing coordinates
+          if (isNaN(state.userLocation.latitude) || isNaN(state.userLocation.longitude)) {
+            // If coordinates are invalid, try to get a new position
+            resetButton();
+            showToast('Invalid location data, requesting new position...', 'warning');
+            // Clear invalid location and request again
+            state.userLocation = null;
+            centerMapOnUser();
+            return;
+          }
+          
+          // We already have valid coordinates, just center map
+          state.map.flyTo(
+            [state.userLocation.latitude, state.userLocation.longitude],
+            16,
+            {
+              duration: 1
+            }
+          );
+          
+          // Show centered notification
+          showToast('Map centered on your location', 'success');
+          resetButton();
+        } catch (err) {
+          console.error("Error centering map:", err);
+          showToast('Error centering map on your location', 'error');
+          resetButton();
+        }
+      }
+    }
+
+    // Update nearby reminders list
+    function updateNearbyReminders() {
+      const container = document.getElementById('nearby-reminders');
+      if (!container) return;
+      
+      // Clear container
+      container.innerHTML = '';
+      
+      // Get nearby reminders
+      const nearbyReminders = getNearbyReminders();
+      
+      if (nearbyReminders.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding: 2rem 1rem;"><i class="fas fa-map-signs"></i><p>No nearby reminders</p></div>';
+        return;
+      }
+      
+      // Create reminder items with staggered animation
+      nearbyReminders.forEach((reminder, index) => {
+        const item = document.createElement('div');
+        item.className = 'reminder-card';
+        item.style.animationDelay = `${index * 0.1}s`;
+        item.classList.add('fade-in');
+        
+        const distance = state.userLocation ? 
+          calculateDistance(
+            state.userLocation.latitude,
+            state.userLocation.longitude,
+            reminder.latitude,
+            reminder.longitude
+          ) : 
+          0;
+        
+        item.innerHTML = `
+          <div class="reminder-header">
+            <div class="reminder-title">${reminder.title}</div>
+            <span class="badge badge-secondary">${Math.round(distance)}m away</span>
+          </div>
+          <div class="reminder-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>${reminder.locationName}</span>
+          </div>
+        `;
+        
+        // Add click event to pan to reminder
+        item.addEventListener('click', () => {
+          state.map.flyTo([reminder.latitude, reminder.longitude], 17, {
+            duration: 0.8
+          });
+          
+          // Find and open popup
+          state.markers.forEach(marker => {
+            if (marker instanceof L.Marker && 
+                marker.getLatLng().lat === reminder.latitude && 
+                marker.getLatLng().lng === reminder.longitude) {
+              marker.openPopup();
+            }
+          });
+          
+          // Highlight the item
+          item.classList.add('pop');
+          setTimeout(() => {
+            item.classList.remove('pop');
+          }, 300);
+        });
+        
+        container.appendChild(item);
+      });
+    }
+
+    // Get user location
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            state.userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            };
+            
+            // Update map if visible
+            if (state.activeTab === 'map' && state.map) {
+              addUserLocationMarker();
+              centerMapOnUser();
+              updateNearbyReminders();
+            }
+            
+            // Setup watchPosition for continuous updates
+            startLocationTracking();
+          },
+          error => {
+            console.error('Error getting location:', error);
+            showToast('Unable to get your location. Please enable location permissions.', 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      }
+    }
+
+    // Start continuous location tracking
+    function startLocationTracking() {
+      if (navigator.geolocation) {
+        const watchId = navigator.geolocation.watchPosition(
+          position => {
+            state.userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            };
+            
+            // Update map if visible
+            if (state.activeTab === 'map' && state.map) {
+              // Remove existing user marker
+              state.markers = state.markers.filter(marker => {
+                if ((marker instanceof L.Marker && marker.getPopup()?.getContent() === '<strong>Your location</strong>') ||
+                    (marker instanceof L.Circle && marker._mRadius === state.userLocation.accuracy)) {
+                  marker.remove();
+                  return false;
+                }
+                return true;
+              });
+              
+              addUserLocationMarker();
+              updateNearbyReminders();
+            }
+            
+            // Check for proximity-based reminders
+            checkProximityToReminders();
+          },
+          error => {
+            console.error('Error tracking location:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
+          }
+        );
+        
+        // Store watch ID for cleanup
+        state.locationWatchId = watchId;
+      }
+    }
+
+    // Check if user is near any reminders
+    function checkProximityToReminders() {
+      if (!state.userLocation) return;
+      
+      state.reminders.forEach(reminder => {
+        if (!reminder.isActive) return;
+        
+        const distance = calculateDistance(
+          state.userLocation.latitude,
+          state.userLocation.longitude,
+          reminder.latitude,
+          reminder.longitude
+        );
+        
+        // Check if user is within reminder radius
+        if (distance <= reminder.radius) {
+          // Check if we should notify based on notification type
+          if (reminder.notificationType === 'arrival' || reminder.notificationType === 'both') {
+            // Only notify if we haven't already notified for this reminder
+            if (!reminder.notified) {
+              notifyUser(reminder, 'arrival');
+              reminder.notified = true;
+              
+              // Auto-delete if setting enabled
+              if (state.settings.autoDelete) {
+                deleteReminder(reminder.id);
+              }
+            }
+          }
+        } else {
+          // User is outside the radius
+          if (reminder.notified) {
+            // Check if we should notify on departure
+            if (reminder.notificationType === 'departure' || reminder.notificationType === 'both') {
+              notifyUser(reminder, 'departure');
+            }
+            
+            // Reset notification state
+            reminder.notified = false;
+          }
+        }
+      });
+      
+      // Save updated reminder states
+      saveToLocalStorage();
+    }
+
+    // Notify the user about a reminder
+    function notifyUser(reminder, type) {
+      // Check if browser supports notifications
+      if (!('Notification' in window)) {
+        console.log('This browser does not support notifications');
+        return;
+      }
+      
+      // Check if permission is granted
+      if (Notification.permission === 'granted') {
+        createNotification(reminder, type);
+      } else if (Notification.permission !== 'denied') {
+        // Request permission
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            createNotification(reminder, type);
+          }
+        });
+      }
+      
+      // Also show a toast notification in the app
+      const message = type === 'arrival' ? 
+        `You've arrived at "${reminder.title}"` :
+        `You've left "${reminder.title}"`;
+      
+      showToast(message, type === 'arrival' ? 'success' : 'info');
+    }
+
+    // Create a notification
+    function createNotification(reminder, type) {
+      const title = type === 'arrival' ? 
+        `You've arrived at ${reminder.locationName}` :
+        `You've left ${reminder.locationName}`;
+      
+      const options = {
+        body: reminder.title,
+        icon: 'https://cdn-icons-png.flaticon.com/512/2529/2529521.png'
+      };
+      
+      const notification = new Notification(title, options);
+      
+      // Handle notification click
+      notification.onclick = function() {
+        window.focus();
+        switchTab('dashboard');
+      };
+    }
+
+    // Calculate distance between coordinates in meters
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      
+      return R * c; // Distance in meters
+    }
+
+    // Save settings
+    function saveSettings() {
+      // Save previous theme for transition
+      const prevTheme = state.settings.theme;
+      
+      // Update settings
+      state.settings.notificationDistance = parseInt(notificationDistanceSelect.value);
+      state.settings.theme = themeSelect.value;
+      state.settings.autoDelete = autoDeleteCheckbox.checked;
+      state.settings.classReminders = classRemindersCheckbox.checked;
+      
+      // Save to localStorage
+      saveToLocalStorage();
+      
+      // Apply settings with animation if theme changed
+      if (prevTheme !== state.settings.theme) {
+        document.body.classList.add('theme-transition');
+        setTimeout(() => {
+          applySettings();
+          setTimeout(() => {
+            document.body.classList.remove('theme-transition');
+          }, 300);
+        }, 50);
+      } else {
+        applySettings();
+      }
+      
+      // Animate save button
+      saveSettingsBtn.classList.add('pop');
+      setTimeout(() => {
+        saveSettingsBtn.classList.remove('pop');
+      }, 300);
+      
+      // Show toast notification
+      showToast('Settings saved successfully', 'success');
+    }
+
+    // Apply settings
+    function applySettings() {
+      // Apply theme
+      updateTheme();
+      
+      // Update form defaults
+      if (reminderRadiusSlider) {
+        reminderRadiusSlider.value = state.settings.notificationDistance;
+        updateRadiusValue();
+      }
+      
+      // Update form values
+      if (notificationDistanceSelect) {
+        notificationDistanceSelect.value = state.settings.notificationDistance;
+      }
+      
+      if (themeSelect) {
+        themeSelect.value = state.settings.theme;
+      }
+      
+      if (autoDeleteCheckbox) {
+        autoDeleteCheckbox.checked = state.settings.autoDelete;
+      }
+      
+      if (classRemindersCheckbox) {
+        classRemindersCheckbox.checked = state.settings.classReminders;
+      }
+    }
+
+    // Update theme
+    function updateTheme() {
+      // Always use light theme regardless of setting
+      document.body.classList.remove('dark-theme');
+      // Update state to reflect light theme is always used
+      state.settings.theme = 'light';
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      // Remove existing toasts
+      const existingToasts = document.querySelectorAll('.toast');
+      existingToasts.forEach(toast => {
+        toast.remove();
+      });
+      
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      // Set icon based on type
+      let icon;
+      switch (type) {
+        case 'success':
+          icon = 'fa-check-circle';
+          break;
+        case 'error':
+          icon = 'fa-exclamation-circle';
+          break;
+        case 'warning':
+          icon = 'fa-exclamation-triangle';
+          break;
+        default:
+          icon = 'fa-info-circle';
+      }
+      
+      toast.innerHTML = `
+        <div class="toast-content">
+          <i class="fas ${icon}"></i>
+          <span class="toast-message">${message}</span>
+        </div>
+        <button class="toast-close"><i class="fas fa-times"></i></button>
+      `;
+      
+      // Add to document
+      document.body.appendChild(toast);
+      
+      // Add close button event
+      const closeBtn = toast.querySelector('.toast-close');
+      closeBtn.addEventListener('click', () => {
+        toast.style.animation = 'toastExit 0.3s forwards';
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      });
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          toast.style.animation = 'toastExit 0.3s forwards';
+          setTimeout(() => {
+            if (document.body.contains(toast)) {
+              toast.remove();
+            }
+          }, 300);
+        }
+      }, 5000);
+    }
+
+    // Start class monitoring
+    function startClassMonitoring() {
+      // Run initial check
+      checkClassStatus();
+      
+      // Set up interval to check class status
+      setInterval(checkClassStatus, 60000); // Check every minute
+    }
+
+    // Check class status (active, upcoming, ended)
+    function checkClassStatus() {
+      const today = getCurrentDayOfWeek();
+      const todayClasses = state.weekSchedule[today] || [];
+      
+      // Create auto-reminders for active and upcoming classes if enabled
+      if (state.settings.classReminders) {
+        const activeClasses = todayClasses.filter(c => isClassActive(c));
+        const upcomingClasses = todayClasses.filter(c => isClassUpcoming(c));
+        
+        // Create reminders for active and upcoming classes
+        [...activeClasses, ...upcomingClasses].forEach(classItem => {
+          // Check if a reminder already exists for this class
+          const existingReminder = state.reminders.find(r => 
+            r.title === classItem.title && 
+            r.locationName === classItem.location
+          );
+          
+          if (!existingReminder) {
+            createReminderFromClass(classItem);
+          }
+        });
+        
+        // Remove reminders for ended classes
+        const endedClasses = todayClasses.filter(c => hasClassEnded(c));
+        
+        endedClasses.forEach(classItem => {
+          const reminderIndex = state.reminders.findIndex(r => 
+            r.title === classItem.title && 
+            r.locationName === classItem.location
+          );
+          
+          if (reminderIndex !== -1) {
+            state.reminders.splice(reminderIndex, 1);
+            saveToLocalStorage();
+            
+            // Update UI if on dashboard
+            if (state.activeTab === 'dashboard') {
+              renderReminders();
+            }
+          }
+        });
+      }
+      
+      // Update UI if viewing timetable for today
+      if (state.activeTab === 'timetable' && state.activeDay === today) {
+        renderTimetable();
+      }
+    }
+
+    // Get current day of week
+    function getCurrentDayOfWeek() {
+      const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      return days[new Date().getDay()];
+    }
+
+    // Check if a class is currently active
+    function isClassActive(classItem) {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+      
+      // Parse start and end times
+      const [startHours, startMinutes] = classItem.startTime.split(':').map(Number);
+      const [endHours, endMinutes] = classItem.endTime.split(':').map(Number);
+      
+      const startTimeInMinutes = startHours * 60 + startMinutes;
+      const endTimeInMinutes = endHours * 60 + endMinutes;
+      
+      // Check if current time is between start and end times
+      return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+    }
+
+    // Check if a class is upcoming (within the next 30 minutes)
+    function isClassUpcoming(classItem, minutesAhead = 30) {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+      
+      // Parse start time
+      const [startHours, startMinutes] = classItem.startTime.split(':').map(Number);
+      const startTimeInMinutes = startHours * 60 + startMinutes;
+      
+      // Check if class starts within the next X minutes
+      return startTimeInMinutes > currentTimeInMinutes && 
+             startTimeInMinutes <= (currentTimeInMinutes + minutesAhead);
+    }
+
+    // Check if a class has ended
+    function hasClassEnded(classItem) {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+      
+      // Parse end time
+      const [endHours, endMinutes] = classItem.endTime.split(':').map(Number);
+      const endTimeInMinutes = endHours * 60 + endMinutes;
+      
+      // Check if current time is after the end time
+      return currentTimeInMinutes > endTimeInMinutes;
+    }
+  </script>
+</body>
+</html>
